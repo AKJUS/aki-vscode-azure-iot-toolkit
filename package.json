@@ -828,7 +828,7 @@
     "azure-iothub": "^1.12.4",
     "body-parser": "^1.18.2",
     "dummy-json": "^3.0.4",
-    "express": "^4.16.3",
+    "express": "^4.20.0",
     "fs-extra": "^9.0.1",
     "glob": "^7.1.6",
     "iview": "^3.5.4",
