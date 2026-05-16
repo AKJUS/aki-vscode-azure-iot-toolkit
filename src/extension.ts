@@ -24,6 +24,7 @@ import { ModuleLabelNode } from "./Nodes/ModuleLabelNode";
 import { DeviceTwinCodeLensProvider } from "./providers/deviceTwinCodeLensProvider";
 import { ModuleTwinCodeLensProvider } from "./providers/moduleTwinCodeLensProvider";
 import { TelemetryClient } from "./telemetryClient";
+import { Utility } from "./utility";
 
 export function activate(context: vscode.ExtensionContext) {
     Constants.initialize(context);
@@ -129,6 +130,15 @@ export function activate(context: vscode.ExtensionContext) {
     const selectIoTHub = vscode.commands.registerCommand("azure-iot-toolkit.selectIoTHub", () => {
         azureIoTExplorer.selectIoTHub();
     });
+
+    context.subscriptions.push(vscode.commands.registerCommand("azure-iot-toolkit.clearIoTHubConnectionString", async () => {
+        await CredentialStore.deletePassword(Constants.IotHubConnectionStringKey);
+        await CredentialStore.deletePassword(Constants.IotHubEventHubConnectionStringKey);
+        await Utility.deleteIoTHubInfo();
+        deviceTree.refresh(undefined);
+        vscode.window.showInformationMessage("IoT Hub connection string has been cleared.");
+        TelemetryClient.sendEvent("General.ClearConnectionString");
+    }));
 
     const copyIoTHubConnectionString = vscode.commands.registerCommand("azure-iot-toolkit.copyIoTHubConnectionString", async () => {
         await azureIoTExplorer.copyIoTHubConnectionString();

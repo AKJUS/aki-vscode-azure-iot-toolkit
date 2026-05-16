@@ -27,11 +27,16 @@ export class DeviceExplorer extends BaseExplorer {
         this._outputChannel.show();
         this.outputLine(label, "Querying devices...");
         TelemetryClient.sendEvent(`AZ.${label}.List`);
-        registry.list((err, deviceList) => {
-            this.outputLine(label, `${deviceList.length} device(s) found`);
-            deviceList.forEach((device, index) => {
-                this.outputLine(`${label}#${index + 1}`, JSON.stringify(device, null, 2));
-            });
+        const pageSize = vscode.workspace.getConfiguration("azure-iot-toolkit").get<number>("deviceQueryPageSize", 100);
+        const query = registry.createQuery("SELECT * FROM devices", pageSize);
+        const allDevices: any[] = [];
+        while (query.hasMoreResults) {
+            const page = await query.next();
+            allDevices.push(...(page as any).result);
+        }
+        this.outputLine(label, `${allDevices.length} device(s) found`);
+        allDevices.forEach((device, index) => {
+            this.outputLine(`${label}#${index + 1}`, JSON.stringify(device, null, 2));
         });
     }
 

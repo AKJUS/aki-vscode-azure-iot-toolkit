@@ -31,7 +31,6 @@
     "dps"
   ],
   "activationEvents": [
-    "*",
     "onView:iotHubDevices",
     "onView:iotDpsExplorer",
     "onView:iotHubExplorer",
@@ -51,6 +50,7 @@
     "onCommand:azure-iot-toolkit.refresh",
     "onCommand:azure-iot-toolkit.selectIoTHub",
     "onCommand:azure-iot-toolkit.copyIoTHubConnectionString",
+    "onCommand:azure-iot-toolkit.clearIoTHubConnectionString",
     "onCommand:azure-iot-toolkit.copyDeviceConnectionString",
     "onCommand:azure-iot-toolkit.createEdgeDevice",
     "onCommand:azure-iot-toolkit.createDeployment",
@@ -199,6 +199,11 @@
       {
         "command": "azure-iot-toolkit.copyIoTHubConnectionString",
         "title": "%azure-iot-toolkit.command.copyIoTHubConnectionString.title%",
+        "category": "%azure-iot-toolkit.category%"
+      },
+      {
+        "command": "azure-iot-toolkit.clearIoTHubConnectionString",
+        "title": "Clear IoT Hub Connection String",
         "category": "%azure-iot-toolkit.category%"
       },
       {
@@ -402,9 +407,14 @@
           "group": "azure-iot-toolkit-4@0"
         },
         {
-          "command": "azure-iot-toolkit.updateDistributedTracingSetting",
+          "command": "azure-iot-toolkit.clearIoTHubConnectionString",
           "when": "view == iotHubDevices",
           "group": "azure-iot-toolkit-4@1"
+        },
+        {
+          "command": "azure-iot-toolkit.updateDistributedTracingSetting",
+          "when": "view == iotHubDevices",
+          "group": "azure-iot-toolkit-4@2"
         },
         {
           "command": "azure-iot-toolkit.sendD2CMessage",
@@ -792,6 +802,13 @@
           "type": "boolean",
           "default": false,
           "description": "%azure-iot-toolkit.configuration.iotHubD2CMessageStringify.description%"
+        },
+        "azure-iot-toolkit.deviceQueryPageSize": {
+          "type": "integer",
+          "default": 100,
+          "minimum": 1,
+          "maximum": 1000,
+          "description": "Number of devices to fetch per page when querying the IoT Hub device registry."
         },
         "azure-iot-toolkit.showIoTHubInfo": {
           "type": "boolean",

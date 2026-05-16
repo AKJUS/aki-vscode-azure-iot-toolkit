@@ -64,8 +64,9 @@ export class IoTHubMessageExplorer extends IoTHubMessageBaseExplorer {
             this.updateMonitorStatus(true);
         } catch (e) {
             this.updateMonitorStatus(false);
-            this.outputLine(Constants.IoTHubMonitorLabel, e);
-            TelemetryClient.sendEvent(Constants.IoTHubAIStartMonitorEvent, { Result: "Exception", [Constants.errorProperties.Message]: e });
+            const errorMessage = e instanceof Error ? e.message : String(e);
+            this.outputLine(Constants.IoTHubMonitorLabel, `Failed to start monitoring: ${errorMessage}`);
+            TelemetryClient.sendEvent(Constants.IoTHubAIStartMonitorEvent, { Result: "Exception", [Constants.errorProperties.Message]: errorMessage });
         }
     }
 
@@ -95,10 +96,15 @@ export class IoTHubMessageExplorer extends IoTHubMessageBaseExplorer {
 
     private printError(label: string) {
         return async (err) => {
-            this.outputLine(label, err.message);
+            const errorMessage = err.message || String(err);
+            this.outputLine(label, `Error: ${errorMessage}`);
             if (this._isMonitoring) {
-                await this._eventHubClient.close();
-                this.outputLine(label, "Message monitoring stopped. Please try to start monitoring again or use a different consumer group to monitor.");
+                try {
+                    await this._eventHubClient.close();
+                } catch {
+                    // Client may already be closed
+                }
+                this.outputLine(label, "Message monitoring stopped due to error. Please check your Event Hub connection string and try again.");
                 this.updateMonitorStatus(false);
             }
         };

@@ -390,18 +390,24 @@ export class Utility {
         const showVerboseMessage = config.get<boolean>("showVerboseMessage");
         let result;
         const body = Utility.tryGetStringFromCharCode(message.body);
+        // In @azure/event-hubs v5+, application properties are in `properties`
+        const appProperties = message.properties || message.applicationProperties;
         if (showVerboseMessage) {
             result = {
                 body,
-                applicationProperties: message.applicationProperties,
+                applicationProperties: appProperties,
                 annotations: message.annotations,
-                properties: message.properties,
-                systemProperties: message.systemProperties
+                properties: {
+                    contentType: message.contentType,
+                    correlationId: message.correlationId,
+                    messageId: message.messageId,
+                },
+                systemProperties: message.systemProperties,
             };
-        } else if (message.applicationProperties && Object.keys(message.applicationProperties).length > 0) {
+        } else if (appProperties && Object.keys(appProperties).length > 0) {
             result = {
                 body,
-                applicationProperties: message.applicationProperties,
+                applicationProperties: appProperties,
             };
         } else {
             result = body;
@@ -473,30 +479,27 @@ export class Utility {
         const registry: Registry = Registry.fromConnectionString(iotHubConnectionString);
         const devices: DeviceItem[] = [];
         const hostName: string = Utility.getHostName(iotHubConnectionString);
+        const pageSize = Utility.getConfiguration().get<number>("deviceQueryPageSize", 100);
 
-        return new Promise<DeviceItem[]>((resolve, reject) => {
-            registry.list((err, deviceList) => {
-                if (err) {
-                    reject(err);
-                } else {
-                    deviceList.forEach((device, index) => {
-                        let deviceConnectionString: string = "";
-                        if (device.authentication.symmetricKey.primaryKey != null) {
-                            deviceConnectionString = DeviceConnectionString.createWithSharedAccessKey(hostName, device.deviceId,
-                                device.authentication.symmetricKey.primaryKey);
-                        } else if (device.authentication.x509Thumbprint.primaryThumbprint != null) {
-                            deviceConnectionString = DeviceConnectionString.createWithX509Certificate(hostName, device.deviceId);
-                        }
-                        devices.push(new DeviceItem(device.deviceId,
-                            deviceConnectionString,
-                            null,
-                            device.connectionState.toString(),
-                            null));
-                    });
-                    resolve(devices.sort((a: DeviceItem, b: DeviceItem) => { return a.deviceId.localeCompare(b.deviceId); }));
+        const query = registry.createQuery("SELECT * FROM devices", pageSize);
+        while (query.hasMoreResults) {
+            const page = (await query.next()) as ResultWithIncomingMessage<any[]>;
+            for (const device of page.result) {
+                let deviceConnectionString: string = "";
+                if (device.authentication?.symmetricKey?.primaryKey != null) {
+                    deviceConnectionString = DeviceConnectionString.createWithSharedAccessKey(hostName, device.deviceId,
+                        device.authentication.symmetricKey.primaryKey);
+                } else if (device.authentication?.x509Thumbprint?.primaryThumbprint != null) {
+                    deviceConnectionString = DeviceConnectionString.createWithX509Certificate(hostName, device.deviceId);
                 }
-            });
-        });
+                devices.push(new DeviceItem(device.deviceId,
+                    deviceConnectionString,
+                    null,
+                    (device.connectionState || "Disconnected").toString(),
+                    null));
+            }
+        }
+        return devices.sort((a: DeviceItem, b: DeviceItem) => a.deviceId.localeCompare(b.deviceId));
     }
 
     private static async getEdgeDeviceIdSet(iotHubConnectionString: string): Promise<Set<string>> {
