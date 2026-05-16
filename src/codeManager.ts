@@ -38,13 +38,26 @@ export class CodeManager {
         }
 
         const iotHubConnectionString = await Utility.getConnectionStringWithId(Constants.IotHubConnectionStringKey);
+        if (!iotHubConnectionString) {
+            vscode.window.showErrorMessage("IoT Hub connection string is not set. Please set it first.");
+            return;
+        }
         const template = this.context.asAbsolutePath(path.join("resources", "code-template", Constants.CodeTemplates[language][type]));
+        const hostName = Utility.getHostName(iotHubConnectionString);
+        let sasToken = "";
+        try {
+            if (deviceItem.connectionString && !deviceItem.connectionString.includes("x509=true")) {
+                sasToken = Utility.generateSasTokenForDevice(deviceItem.connectionString);
+            }
+        } catch {
+            // x509 or cert-based devices don't support SAS tokens
+        }
         const replacements = new Map(
-            [[/{{deviceConnectionString}}/g, deviceItem.connectionString],
+            [[/{{deviceConnectionString}}/g, deviceItem.connectionString || ""],
             [/{{iotHubConnectionString}}/g, iotHubConnectionString],
             [/{{deviceId}}/g, deviceItem.deviceId],
-            [/{{iotHubHostName}}/g, Utility.getHostName(iotHubConnectionString)],
-            [/{{deviceSasToken}}/g, Utility.generateSasTokenForDevice(deviceItem.connectionString)],
+            [/{{iotHubHostName}}/g, hostName],
+            [/{{deviceSasToken}}/g, sasToken],
             ]);
         if ((await fs.stat(template)).isFile()) {
             let content = await fs.readFile(template, "utf8");

@@ -181,8 +181,8 @@ export function activate(context: vscode.ExtensionContext) {
         azureIoTExplorer.showWelcomePage();
     }));
 
-    context.subscriptions.push(vscode.commands.registerCommand("azure-iot-toolkit.generateCode", (deviceNode: DeviceNode) => {
-        azureIoTExplorer.generateCode(deviceNode ? deviceNode.deviceItem : undefined);
+    context.subscriptions.push(vscode.commands.registerCommand("azure-iot-toolkit.generateCode", async (deviceNode: DeviceNode) => {
+        await azureIoTExplorer.generateCode(deviceNode ? deviceNode.deviceItem : undefined);
     }));
 
     context.subscriptions.push(vscode.commands.registerCommand("azure-iot-toolkit.createModule", (moduleLabelNode: ModuleLabelNode) => {

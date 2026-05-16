@@ -185,8 +185,8 @@ export class AzureIoTExplorer {
         this._welcomePage.show();
     }
 
-    public generateCode(deviceItem: DeviceItem): void {
-        this._codeManager.generateCode(deviceItem);
+    public async generateCode(deviceItem: DeviceItem): Promise<void> {
+        await this._codeManager.generateCode(deviceItem);
     }
 
     public createModule(deviceNode: DeviceNode): void {
