@@ -2,6 +2,7 @@
 // Licensed under the MIT license.
 
 import { IotHubClient, IotHubDescription } from "@azure/arm-iothub";
+import { TokenCredential } from "@azure/core-auth";
 import { IActionContext } from "@microsoft/vscode-azext-utils";
 import { VSCodeSubscriptionTreeItemBase } from "../VSCodeAccountTreeItemBase";
 import { IoTHubResourceTreeItem } from "./IoTHubResourceTreeItem";
@@ -18,7 +19,7 @@ export class IoTHubSubscriptionTreeItem extends VSCodeSubscriptionTreeItemBase {
         _context.telemetry.properties.nodeType = "IotHub";
 
         const sub = this.root;
-        const client = new IotHubClient(sub.credentials as any, sub.subscriptionId);
+        const client = new IotHubClient(sub.credentials as TokenCredential, sub.subscriptionId);
         const results: IoTHubResourceTreeItem[] = [];
         for await (const iotHub of client.iotHubResource.listBySubscription()) {
             results.push(new IoTHubResourceTreeItem(this, iotHub));

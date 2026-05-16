@@ -201,7 +201,7 @@ const app = createApp({
               ? data.plainTextArea
               : defaultValue.plainTextArea;
           this.textArea.dummyJsonArea =
-            data.dummyJsonArea && DataTransfer.dummyJsonArea !== ""
+            data.dummyJsonArea && data.dummyJsonArea !== ""
               ? data.dummyJsonArea
               : defaultValue.dummyJsonArea;
           await this.textAreaOnChange();

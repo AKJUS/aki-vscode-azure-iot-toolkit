@@ -22,8 +22,8 @@ export class VSCodeTokenCredential implements TokenCredential {
         }
         return {
             token: this.session.accessToken,
-            // VS Code sessions don't expose expiry; set a short TTL so the SDK re-requests
-            expiresOnTimestamp: Date.now() + 5 * 60 * 1000,
+            // VS Code sessions don't expose expiry; use conservative TTL under typical 1hr Azure AD lifetime
+            expiresOnTimestamp: Date.now() + 55 * 60 * 1000,
         };
     }
 }

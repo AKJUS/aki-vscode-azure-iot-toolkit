@@ -50,7 +50,7 @@ export class Utility {
                     TelemetryClient.sendEvent("General.SetConfig.Done", { Result: "Success" });
                     await CredentialStore.setPassword(id, value);
                     if (id === Constants.IotHubConnectionStringKey) {
-                        await CredentialStore.setPassword(Constants.IotHubEventHubConnectionStringKey, undefined);
+                        await CredentialStore.deletePassword(Constants.IotHubEventHubConnectionStringKey);
                         await Utility.deleteIoTHubInfo();
                     }
                     resolve(value);
