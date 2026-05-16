@@ -485,9 +485,9 @@ export class Utility {
                 } else {
                     deviceList.forEach((device, index) => {
                         let deviceConnectionString: string = "";
-                        if (device.authentication.SymmetricKey.primaryKey != null) {
+                        if (device.authentication.symmetricKey.primaryKey != null) {
                             deviceConnectionString = DeviceConnectionString.createWithSharedAccessKey(hostName, device.deviceId,
-                                device.authentication.SymmetricKey.primaryKey);
+                                device.authentication.symmetricKey.primaryKey);
                         } else if (device.authentication.x509Thumbprint.primaryThumbprint != null) {
                             deviceConnectionString = DeviceConnectionString.createWithX509Certificate(hostName, device.deviceId);
                         }
