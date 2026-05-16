@@ -10,17 +10,13 @@ export class DpsResourceTreeItem extends AzureTreeItem {
     private static contextValue: string = "IotDps";
     public readonly contextValue: string = DpsResourceTreeItem.contextValue;
     public readonly dps: IotDpsModels.ProvisioningServiceDescription;
+    public readonly id: string;
+    public readonly iconPath: TreeItemIconPath;
     constructor(parent: AzureParentTreeItem, dps: IotDpsModels.ProvisioningServiceDescription) {
         super(parent);
         this.dps = dps;
-    }
-
-    public get id(): string {
-        if (this.dps.id) {
-            return this.dps.id;
-        } else {
-            return "";
-        }
+        this.id = this.dps.id || "";
+        this.iconPath = TreeUtils.getThemedIconPath("dps");
     }
 
     public get label(): string {
@@ -29,9 +25,5 @@ export class DpsResourceTreeItem extends AzureTreeItem {
         } else {
             return "";
         }
-    }
-
-    public get iconPath(): TreeItemIconPath {
-        return TreeUtils.getThemedIconPath("dps");
     }
 }

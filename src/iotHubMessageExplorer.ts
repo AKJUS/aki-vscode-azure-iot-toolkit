@@ -102,7 +102,7 @@ export class IoTHubMessageExplorer extends IoTHubMessageBaseExplorer {
                 this.updateMonitorStatus(false);
             }
         };
-    };
+    }
 
     private printMessage(label: string, deviceItem?: DeviceItem) {
         return async (messages: ReceivedEventData[]) => {
@@ -119,5 +119,5 @@ export class IoTHubMessageExplorer extends IoTHubMessageBaseExplorer {
                 this._outputChannel.appendLine(JSON.stringify(result, null, 2));
             });
         };
-    };
+    }
 }

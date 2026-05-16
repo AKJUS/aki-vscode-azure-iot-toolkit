@@ -14,7 +14,7 @@ export class IoTHubLabelNode implements INode {
         return {
             label: Utility.getIoTHubName(this.iotHubConnectionString),
             contextValue: "iothub-label",
-            iconPath: TreeUtils.getThemedIconPath("iothub"),
+            iconPath: TreeUtils.getThemedIconPath("iothub") as any,
         };
     }
 

@@ -478,7 +478,7 @@ export class IoTHubResourceExplorer extends BaseExplorer {
         if (!name || name.length < min || name.length > max) {
             return `The name must be between ${min} and ${max} characters long.`;
         }
-        if (name.match(/[^a-zA-Z0-9\.\_\-\(\)]/)) {
+        if (name.match(/[^a-zA-Z0-9._\-()]/)) {
             return "The name must contain only alphanumeric characters or the symbols ._-()";
         }
         if (name.endsWith(".")) {

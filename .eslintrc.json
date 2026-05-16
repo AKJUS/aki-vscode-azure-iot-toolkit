@@ -1,0 +1,26 @@
+{
+    "root": true,
+    "parser": "@typescript-eslint/parser",
+    "parserOptions": {
+        "ecmaVersion": 2017,
+        "sourceType": "module"
+    },
+    "plugins": ["@typescript-eslint"],
+    "extends": [
+        "eslint:recommended",
+        "plugin:@typescript-eslint/recommended"
+    ],
+    "rules": {
+        "@typescript-eslint/naming-convention": "off",
+        "@typescript-eslint/no-explicit-any": "off",
+        "@typescript-eslint/no-unused-vars": ["warn", { "argsIgnorePattern": "^_" }],
+        "@typescript-eslint/no-var-requires": "off",
+        "no-empty": "off",
+        "no-async-promise-executor": "warn",
+        "no-prototype-builtins": "warn",
+        "no-constant-condition": "warn",
+        "no-fallthrough": "warn",
+        "max-len": ["warn", { "code": 200 }]
+    },
+    "ignorePatterns": ["out", "dist", "node_modules", "**/*.d.ts"]
+}

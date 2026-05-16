@@ -63,7 +63,7 @@ export class Utility {
                 }
             });
             input.onDidHide(() => {
-                resolve();
+                resolve(undefined);
                 input.dispose();
                 if (!value) {
                     this.showIoTHubInformationMessage();
@@ -281,7 +281,7 @@ export class Utility {
             }
 
             const deviceList: Promise<DeviceItem[]> = Utility.getFilteredDeviceList(iotHubConnectionString, onlyEdgeDevice);
-            deviceItem = await vscode.window.showQuickPick(deviceList, { placeHolder: "Select an IoT Hub device" });
+            deviceItem = await vscode.window.showQuickPick(deviceList as Promise<vscode.QuickPickItem[]>, { placeHolder: "Select an IoT Hub device" }) as DeviceItem;
             return deviceItem;
         } else {
             if (eventName) {

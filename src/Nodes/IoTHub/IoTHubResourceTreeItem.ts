@@ -10,17 +10,13 @@ export class IoTHubResourceTreeItem extends AzureTreeItem {
     private static contextValue: string = "IotHub";
     public readonly contextValue: string = IoTHubResourceTreeItem.contextValue;
     public readonly iotHub: IotHubModels.IotHubDescription;
+    public readonly id: string;
+    public readonly iconPath: TreeItemIconPath;
     constructor(parent: AzureParentTreeItem, iotHub: IotHubModels.IotHubDescription) {
         super(parent);
         this.iotHub = iotHub;
-    }
-
-    public get id(): string {
-        if (this.iotHub.id) {
-            return this.iotHub.id;
-        } else {
-            return "";
-        }
+        this.id = this.iotHub.id || "";
+        this.iconPath = TreeUtils.getThemedIconPath("iothub");
     }
 
     public get label(): string {
@@ -29,9 +25,5 @@ export class IoTHubResourceTreeItem extends AzureTreeItem {
         } else {
             return "";
         }
-    }
-
-    public get iconPath(): TreeItemIconPath {
-        return TreeUtils.getThemedIconPath("iothub");
     }
 }
