@@ -5,11 +5,19 @@
 
 import { Event, Terminal, Progress, CancellationToken } from 'vscode';
 import { Subscription } from "@azure/arm-subscriptions";
-import { Environment } from "@azure/ms-rest-azure-env";
 import { ReadStream } from 'fs';
-import { TokenCredentialsBase } from '@azure/ms-rest-nodeauth';
 
 export type AzureLoginStatus = 'Initializing' | 'LoggingIn' | 'LoggedIn' | 'LoggedOut';
+
+export interface Environment {
+	readonly name: string;
+	readonly portalUrl: string;
+	readonly managementEndpointUrl: string;
+	readonly resourceManagerEndpointUrl: string;
+	readonly activeDirectoryEndpointUrl: string;
+	readonly activeDirectoryResourceId: string;
+	[key: string]: any;
+}
 
 export interface AzureAccount {
 	readonly status: AzureLoginStatus;
@@ -30,7 +38,7 @@ export interface AzureSession {
 	readonly environment: Environment;
 	readonly userId: string;
 	readonly tenantId: string;
-	readonly credentials2: TokenCredentialsBase;
+	readonly credentials2: any;
 }
 
 export interface AzureSubscription {

@@ -2,17 +2,15 @@
 // Licensed under the MIT license.
 
 import { ProvisioningServiceDescription } from "@azure/arm-deviceprovisioningservices";
-import { AzureParentTreeItem, AzureTreeItem, TreeItemIconPath } from "vscode-azureextensionui";
+import { AzExtParentTreeItem, AzExtTreeItem } from "@microsoft/vscode-azext-utils";
 import { TreeUtils } from "../../Utility/treeUtils";
 
 // Represents a DPS resource
-export class DpsResourceTreeItem extends AzureTreeItem {
+export class DpsResourceTreeItem extends AzExtTreeItem {
     private static contextValue: string = "IotDps";
     public readonly contextValue: string = DpsResourceTreeItem.contextValue;
     public readonly dps: ProvisioningServiceDescription;
-    public readonly id: string;
-    public readonly iconPath: TreeItemIconPath;
-    constructor(parent: AzureParentTreeItem, dps: ProvisioningServiceDescription) {
+    constructor(parent: AzExtParentTreeItem, dps: ProvisioningServiceDescription) {
         super(parent);
         this.dps = dps;
         this.id = this.dps.id || "";

@@ -2,7 +2,8 @@
 // Licensed under the MIT license.
 
 import * as path from "path";
-import { TreeItemIconPath } from "vscode-azureextensionui";
+import * as vscode from "vscode";
+import { TreeItemIconPath } from "@microsoft/vscode-azext-utils";
 import { Constants } from "../constants";
 
 export class TreeUtils {
@@ -13,8 +14,8 @@ export class TreeUtils {
 
     public static getThemedIconPath(iconName: string): TreeItemIconPath {
         return {
-            light: path.join(Constants.ResourcesFolderPath, "light", `${iconName}.svg`),
-            dark: path.join(Constants.ResourcesFolderPath, "dark", `${iconName}.svg`),
+            light: vscode.Uri.file(path.join(Constants.ResourcesFolderPath, "light", `${iconName}.svg`)),
+            dark: vscode.Uri.file(path.join(Constants.ResourcesFolderPath, "dark", `${iconName}.svg`)),
         };
     }
 }

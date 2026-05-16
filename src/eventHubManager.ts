@@ -9,7 +9,6 @@ import { IoTHubMessageBaseExplorer } from "./iotHubMessageBaseExplorer";
 import { EventHubItem } from "./Model/EventHubItem";
 import { TelemetryClient } from "./telemetryClient";
 import { Utility } from "./utility";
-import { createAzureClient } from "vscode-azureextensionui";
 
 export class EventHubManager extends IoTHubMessageBaseExplorer {
     private _eventHubClient: EventHubConsumerClient;
@@ -30,11 +29,7 @@ export class EventHubManager extends IoTHubMessageBaseExplorer {
             this._outputChannel.show();
             this.outputLine(Constants.EventHubMonitorLabel, `Start monitoring message arrived in custom Event Hub endpoint [${eventHubItem.eventHubProperty.name}] ...`);
 
-            const eventHubClient = createAzureClient({
-                credentials: eventHubItem.azureSubscription.session.credentials2,
-                environment: eventHubItem.azureSubscription.session.environment,
-                subscriptionId: eventHubItem.azureSubscription.subscription.subscriptionId
-            }, EventHubManagementClient);
+            const eventHubClient = new EventHubManagementClient(eventHubItem.azureSubscription.session.credentials2 as any, eventHubItem.azureSubscription.subscription.subscriptionId);
 
             const connectionString = (await eventHubClient.namespaces.listKeys(eventHubItem.eventHubProperty.resourceGroup,
                 this.getNamespacefromConnectionString(eventHubItem.eventHubProperty.connectionString), "RootManageSharedAccessKey")).primaryConnectionString;

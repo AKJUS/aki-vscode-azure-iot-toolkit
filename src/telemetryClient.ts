@@ -3,13 +3,12 @@
 
 "use strict";
 import * as vscode from "vscode";
-import TelemetryReporter from "vscode-extension-telemetry";
+import { TelemetryReporter } from "@vscode/extension-telemetry";
 import { Constants } from "./constants";
 import { NSAT } from "./nsat";
 import { Utility } from "./utility";
 
 const packageJSON = vscode.extensions.getExtension(Constants.ExtensionId).packageJSON;
-const extensionVersion: string = packageJSON.version;
 const aiKey: string = packageJSON.aiKey;
 
 export class TelemetryClient {
@@ -21,7 +20,7 @@ export class TelemetryClient {
         properties = await this.addCommonProperties(properties, iotHubConnectionString);
         const errorProperties = Object.values(Constants.errorProperties);
         if (this.hasErrorProperties(properties, errorProperties)) {
-            this._client.sendTelemetryErrorEvent(eventName, properties, measurements, errorProperties);
+            this._client.sendTelemetryErrorEvent(eventName, properties, measurements);
         } else {
             this._client.sendTelemetryEvent(eventName, properties, measurements);
         }
@@ -33,7 +32,7 @@ export class TelemetryClient {
         }
     }
 
-    private static _client = new TelemetryReporter(Constants.ExtensionId, extensionVersion, aiKey, true);
+    private static _client = new TelemetryReporter(`InstrumentationKey=${aiKey}`);
     private static _extensionContext: vscode.ExtensionContext;
     private static _isInternal: boolean = TelemetryClient.isInternalUser();
 

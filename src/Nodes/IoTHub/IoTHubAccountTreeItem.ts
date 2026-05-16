@@ -1,7 +1,8 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT license.
 
-import { AzureAccountTreeItemBase, ISubscriptionContext, SubscriptionTreeItemBase } from "vscode-azureextensionui";
+import { AzureAccountTreeItemBase, SubscriptionTreeItemBase } from "@microsoft/vscode-azext-azureutils";
+import { ISubscriptionContext } from "@microsoft/vscode-azext-utils";
 import { IoTHubSubscriptionTreeItem } from "./IoTHubSubscriptionTreeItem";
 
 // The root of IoT Hub treeview, represents an Azure account

@@ -1,7 +1,8 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT license.
 
-import { AzureAccountTreeItemBase, ISubscriptionContext, SubscriptionTreeItemBase } from "vscode-azureextensionui";
+import { AzureAccountTreeItemBase, SubscriptionTreeItemBase } from "@microsoft/vscode-azext-azureutils";
+import { ISubscriptionContext } from "@microsoft/vscode-azext-utils";
 import { DpsSubscriptionTreeItem } from "./DpsSubscriptionTreeItem";
 
 // The root of DPS treeview, represents an Azure account

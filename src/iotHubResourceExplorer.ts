@@ -2,10 +2,10 @@
 // Licensed under the MIT license.
 
 "use strict";
-import { ResourceManagementClient, ResourceManagementModels } from "@azure/arm-resources";
+import { ResourceManagementClient, ResourceGroup } from "@azure/arm-resources";
 import { SubscriptionClient } from "@azure/arm-subscriptions";
 import * as vscode from "vscode";
-import { AzExtTreeDataProvider, AzureTreeItem, IActionContext, createAzureClient, createAzureSubscriptionClient } from "vscode-azureextensionui";
+import { AzExtTreeDataProvider, AzExtTreeItem, IActionContext } from "@microsoft/vscode-azext-utils";
 import { IotHubClient, IotHubDescription, RoutingEventHubProperties, OperationInputs } from "@azure/arm-iothub";
 import { AzureAccount } from "./azure-account.api";
 import { BaseExplorer } from "./baseExplorer";
@@ -19,7 +19,7 @@ import { SubscriptionItem } from "./Model/SubscriptionItem";
 import { IoTHubResourceTreeItem } from "./Nodes/IoTHub/IoTHubResourceTreeItem";
 import { TelemetryClient } from "./telemetryClient";
 import { Utility } from "./utility";
-import { Environment } from "@azure/ms-rest-azure-env";
+import { Environment } from "./azure-account.api";
 
 export class IoTHubResourceExplorer extends BaseExplorer {
     private readonly accountApi: AzureAccount;
@@ -93,11 +93,7 @@ export class IoTHubResourceExplorer extends BaseExplorer {
             }, 1000);
 
             const { session, subscription } = subscriptionItem;
-            const client = createAzureClient({
-                credentials: session.credentials2,
-                subscriptionId: subscription.subscriptionId,
-                environment: session.environment
-            }, IotHubClient);
+            const client = new IotHubClient(session.credentials2 as any, subscription.subscriptionId);
             const iotHubCreateParams = {
                 location: locationItem.location.name,
                 subscriptionid: subscription.subscriptionId,
@@ -167,17 +163,17 @@ export class IoTHubResourceExplorer extends BaseExplorer {
         this._outputChannel.show();
         this._outputChannel.appendLine(`IoT Hub selected: ${node.iotHub.name}`);
         vscode.commands.executeCommand("iotHubDevices.focus");
-        await this.updateAndStoreIoTHubInfo(node.root.credentials,
-            node.root.subscriptionId, node.root.environment , node.iotHub);
+        const subContext = node.subscription;
+        await this.updateAndStoreIoTHubInfo(subContext.credentials,
+            subContext.subscriptionId, subContext.environment , node.iotHub);
     }
 
-    public async loadMore(actionContext: IActionContext, node: AzureTreeItem): Promise<void> {
+    public async loadMore(actionContext: IActionContext, node: AzExtTreeItem): Promise<void> {
         await this.iotHubTreeDataProvider.loadMore(node, actionContext);
     }
 
-    public async refresh(context: IActionContext, node?: AzureTreeItem): Promise<void> {
-
-        await this.iotHubTreeDataProvider.refresh(node);
+    public async refresh(context: IActionContext, node?: AzExtTreeItem): Promise<void> {
+        await this.iotHubTreeDataProvider.refresh(context, node);
     }
 
     public async copyIoTHubConnectionString() {
@@ -250,11 +246,7 @@ export class IoTHubResourceExplorer extends BaseExplorer {
     private async loadIoTHubItems(subscriptionItem: SubscriptionItem): Promise<IotHubItem[]> {
         const iotHubItems: IotHubItem[] = [];
         const { session, subscription } = subscriptionItem;
-        const client = createAzureClient({
-            credentials: session.credentials2,
-            subscriptionId: subscription.subscriptionId,
-            environment: session.environment
-        }, IotHubClient);
+        const client = new IotHubClient(session.credentials2 as any, subscription.subscriptionId);
         const iotHubIterator = client.iotHubResource.listBySubscription();
         for await (const iotHub of iotHubIterator) {
             iotHubItems.push(new IotHubItem(iotHub));
@@ -310,21 +302,13 @@ export class IoTHubResourceExplorer extends BaseExplorer {
     }
 
     private async getIoTHubConnectionString(credentials: any, subscriptionId: string, environment: Environment, iotHubDescription: IotHubDescription) {
-        const client = createAzureClient({
-            credentials,
-            subscriptionId,
-            environment
-        }, IotHubClient);
+        const client = new IotHubClient(credentials, subscriptionId);
         return client.iotHubResource.getKeysForKeyName(Utility.getResourceGroupNameFromId(iotHubDescription.id), iotHubDescription.name, "iothubowner").then((result) => {
             return `HostName=${iotHubDescription.properties.hostName};SharedAccessKeyName=${result.keyName};SharedAccessKey=${result.primaryKey}`;
         });
     }
     private async getEventHubConnectionString(credentials: any, subscriptionId: string, environment: Environment, iotHubDescription: IotHubDescription) {
-        const client = createAzureClient({
-            credentials,
-            subscriptionId,
-            environment
-        }, IotHubClient);
+        const client = new IotHubClient(credentials, subscriptionId);
 
         return client.iotHubResource.getKeysForKeyName(Utility.getResourceGroupNameFromId(iotHubDescription.id), iotHubDescription.name, "iothubowner").then((result) => {
             return `Endpoint=${iotHubDescription.properties.eventHubEndpoints.events.endpoint};SharedAccessKeyName=${result.keyName};SharedAccessKey=${result.primaryKey};EntityPath=${iotHubDescription.properties.eventHubEndpoints.events.path}`;
@@ -371,23 +355,20 @@ export class IoTHubResourceExplorer extends BaseExplorer {
     }
 
     private async getResourceGroupItems(subscriptionItem: SubscriptionItem): Promise<vscode.QuickPickItem[]> {
-        const resourceManagementClient = createAzureClient({
-            credentials: subscriptionItem.session.credentials2,
-            subscriptionId: subscriptionItem.subscription.subscriptionId,
-            environment: subscriptionItem.session.environment
-        }, ResourceManagementClient);
-        const resourceGroups = await resourceManagementClient.resourceGroups.list();
+        const resourceManagementClient = new ResourceManagementClient(subscriptionItem.session.credentials2 as any, subscriptionItem.subscription.subscriptionId);
         const resourceGroupItems: vscode.QuickPickItem[] = [{
             label: "$(plus) Create Resource Group",
             description: null,
         }];
+        const resourceGroups: ResourceGroup[] = [];
+        for await (const rg of resourceManagementClient.resourceGroups.list()) {
+            resourceGroups.push(rg);
+        }
         return resourceGroupItems.concat(resourceGroups.map((resourceGroup) => new ResourceGroupItem(resourceGroup)));
     }
 
     private async getLocationItems(subscriptionItem: SubscriptionItem): Promise<LocationItem[]> {
-        const subscriptionClient =  createAzureSubscriptionClient({
-            credentials: subscriptionItem.session.credentials2,
-            environment: subscriptionItem.session.environment}, SubscriptionClient);
+        const subscriptionClient = new SubscriptionClient(subscriptionItem.session.credentials2 as any);
         const locationIterator = subscriptionClient.subscriptions.listLocations(subscriptionItem.subscription.subscriptionId);
         const locations: LocationItem[] = [];
         for await (const location of locationIterator) {
@@ -397,11 +378,7 @@ export class IoTHubResourceExplorer extends BaseExplorer {
     }
 
     private async getIoTHubName(subscriptionItem: SubscriptionItem): Promise<string> {
-        const client = createAzureClient({
-            credentials: subscriptionItem.session.credentials2,
-            subscriptionId: subscriptionItem.subscription.subscriptionId,
-            environment: subscriptionItem.session.environment
-        }, IotHubClient);
+        const client = new IotHubClient(subscriptionItem.session.credentials2 as any, subscriptionItem.subscription.subscriptionId);
 
         while (true) {
             const accountName = await vscode.window.showInputBox({
@@ -447,7 +424,7 @@ export class IoTHubResourceExplorer extends BaseExplorer {
         return null;
     }
 
-    private async createResourceGroup(subscriptionItem: SubscriptionItem): Promise<ResourceManagementModels.ResourceGroup> {
+    private async createResourceGroup(subscriptionItem: SubscriptionItem): Promise<ResourceGroup> {
         const resourceGroupName = await vscode.window.showInputBox({
             placeHolder: "Resource Group Name",
             prompt: "Provide a resource group name",
@@ -466,11 +443,7 @@ export class IoTHubResourceExplorer extends BaseExplorer {
                     title: `Creating resource group '${resourceGroupName}'`,
                     location: vscode.ProgressLocation.Notification,
                 }, async (progress) => {
-                    const resourceManagementClient = createAzureClient({
-                        credentials: subscriptionItem.session.credentials2,
-                        subscriptionId: subscriptionItem.subscription.subscriptionId,
-                        environment: subscriptionItem.session.environment
-                    }, ResourceManagementClient);
+                    const resourceManagementClient = new ResourceManagementClient(subscriptionItem.session.credentials2 as any, subscriptionItem.subscription.subscriptionId);
                     return resourceManagementClient.resourceGroups.createOrUpdate(resourceGroupName, { location: locationItem.location.name });
                 });
             }
@@ -497,3 +470,4 @@ export class IoTHubResourceExplorer extends BaseExplorer {
 interface IPartialList<T> extends Array<T> {
     nextLink?: string;
 }
+

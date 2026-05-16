@@ -3,7 +3,6 @@
 
 import { IotHubClient } from "@azure/arm-iothub";
 import * as vscode from "vscode";
-import { createAzureClient} from "vscode-azureextensionui";
 import { Constants } from "../../constants";
 import { TelemetryClient } from "../../telemetryClient";
 import { Utility } from "../../utility";
@@ -36,11 +35,7 @@ export class EndpointsLabelNode implements INode {
             }
 
             const subscription = accountApi.subscriptions.find((element) => element.subscription.subscriptionId === subscriptionId);
-            const client = createAzureClient({
-                credentials: subscription.session.credentials2,
-                subscriptionId: subscription.subscription.subscriptionId,
-                environment: subscription.session.environment
-            }, IotHubClient);
+            const client = new IotHubClient(subscription.session.credentials2 as any, subscription.subscription.subscriptionId);
             const iotHubIterator = client.iotHubResource.listBySubscription();
             let iothub = undefined;
             const targetId = Constants.ExtensionContext.globalState.get(Constants.StateKeyIoTHubID);

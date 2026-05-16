@@ -2,7 +2,8 @@
 // Licensed under the MIT license.
 import { IotDpsClient, ProvisioningServiceDescription } from "@azure/arm-deviceprovisioningservices";
 import * as vscode from "vscode";
-import { AzExtTreeDataProvider, AzureTreeItem, createAzureClient, IActionContext, openReadOnlyJson } from "vscode-azureextensionui";
+import { createAzureClient } from "@microsoft/vscode-azext-azureutils";
+import { AzExtTreeDataProvider, AzExtTreeItem, IActionContext, openReadOnlyJson } from "@microsoft/vscode-azext-utils";
 import { BaseExplorer } from "./baseExplorer";
 import { Constants } from "./constants";
 import { DpsResourceTreeItem } from "./Nodes/DPS/DpsResourceTreeItem";
@@ -20,7 +21,7 @@ export class DpsResourceExplorer extends BaseExplorer {
             node = await this._dpsTreeDataProvider.showTreeItemPicker<DpsResourceTreeItem>("IotDps", context);
         }
 
-        const client: IotDpsClient = createAzureClient(node.root, IotDpsClient);
+        const client: IotDpsClient = createAzureClient([context, node], IotDpsClient);
         const matchResult = Constants.DpsResourceGroupNameRegex.exec(node.fullId);
         let dpsInfo: ProvisioningServiceDescription = null;
         if (matchResult != null) {
@@ -37,11 +38,11 @@ export class DpsResourceExplorer extends BaseExplorer {
         await openReadOnlyJson(propertyInfo, dpsInfo);
     }
 
-    public async loadMore(actionContext: IActionContext, node: AzureTreeItem): Promise<void> {
+    public async loadMore(actionContext: IActionContext, node: AzExtTreeItem): Promise<void> {
         await this._dpsTreeDataProvider.loadMore(node, actionContext);
     }
 
-    public async refresh(actionContext: IActionContext, node?: AzureTreeItem): Promise<void> {
-        await this._dpsTreeDataProvider.refresh(node);
+    public async refresh(actionContext: IActionContext, node?: AzExtTreeItem): Promise<void> {
+        await this._dpsTreeDataProvider.refresh(actionContext, node);
     }
 }
