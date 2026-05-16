@@ -7,7 +7,6 @@
 
 'use strict';
 
-const copyPlugin = require('copy-webpack-plugin');
 const failOnErrorsPlugin = require('fail-on-errors-webpack-plugin');
 const terserWebpackPlugin = require('terser-webpack-plugin');
 const path = require('path');
@@ -106,14 +105,6 @@ const extensionConfig = {
             false,
             /$^/
         ),
-        // Copy required resources for Azure treeview
-        new copyPlugin({
-            patterns: [
-                {
-                    from: 'node_modules/vscode-azureextensionui/resources/**/*.svg'
-                }
-            ]
-        }),
         // Fail on warnings so that CI can report new warnings which require attention
         new failOnErrorsPlugin({
             failOnErrors: true,
@@ -142,9 +133,28 @@ const simulatorConfig = {
     resolve: {
         extensions: ['.js'],
         alias: {
-            vue: 'vue/dist/vue.js'
+            vue: 'vue/dist/vue.esm-bundler.js'
         },
     },
+    module: {
+        rules: [
+            {
+                test: /\.css$/,
+                use: ['style-loader', 'css-loader']
+            },
+            {
+                test: /\.(woff2?|eot|ttf|otf|svg)(\?.*)?$/,
+                type: 'asset/resource'
+            }
+        ]
+    },
+    plugins: [
+        new webpack.DefinePlugin({
+            __VUE_OPTIONS_API__: true,
+            __VUE_PROD_DEVTOOLS__: false,
+            __VUE_PROD_HYDRATION_MISMATCH_DETAILS__: false
+        })
+    ],
     optimization: {
         splitChunks: {
           cacheGroups: {

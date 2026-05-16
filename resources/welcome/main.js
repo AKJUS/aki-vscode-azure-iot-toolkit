@@ -1,35 +1,52 @@
-import $ from "jquery";
-
-$(function () {
+document.addEventListener("DOMContentLoaded", function () {
     main();
 });
 
 function main() {
     const vscode = acquireVsCodeApi();
-    $("a").click((event) => {
-        vscode.postMessage({
-            href: event.target.href
+
+    document.querySelectorAll("a").forEach(function (link) {
+        link.addEventListener("click", function (event) {
+            vscode.postMessage({
+                href: event.target.href
+            });
         });
     });
 
-    $(".interactive").click((event) => {
-        if (!$(event.target).is("a") && !$(event.target).is(".detail") &&
-            $(event.target).parents(".detail").length === 0) {
-            $(event.currentTarget).find(".detail").toggle(1000);
-            $(event.currentTarget).find(".arrow").toggleClass("arrow-up");
+    document.querySelectorAll(".interactive").forEach(function (el) {
+        el.addEventListener("click", function (event) {
+            const target = event.target;
+            if (target.tagName === "A" || target.classList.contains("detail") ||
+                target.closest(".detail")) {
+                return;
+            }
+            const detail = el.querySelector(".detail");
+            if (detail) {
+                detail.style.display = detail.style.display === "none" ? "" : "none";
+            }
+            const arrow = el.querySelector(".arrow");
+            if (arrow) {
+                arrow.classList.toggle("arrow-up");
+            }
             vscode.postMessage({
-                href: `toggle:${$(event.currentTarget).attr("id")}`
+                href: "toggle:" + el.id
             });
-        }
+        });
     });
 
-    $(window).scroll(() => {
-        let offset = 250;
-        let duration = 600;
-        if ($(this).scrollTop() >= offset) {
-            $('#back-to-top').fadeIn(duration);
-        } else {
-            $('#back-to-top').fadeOut(duration);
+    window.addEventListener("scroll", function () {
+        const offset = 250;
+        const backToTop = document.getElementById("back-to-top");
+        if (backToTop) {
+            if (window.scrollY >= offset) {
+                backToTop.style.display = "block";
+                backToTop.style.opacity = "1";
+                backToTop.style.visibility = "visible";
+            } else {
+                backToTop.style.opacity = "0";
+                backToTop.style.visibility = "hidden";
+                backToTop.style.display = "none";
+            }
         }
     });
 }

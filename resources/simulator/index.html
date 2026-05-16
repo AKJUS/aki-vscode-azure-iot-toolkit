@@ -6,7 +6,6 @@
         otherwise webview may show in blank because some variable cannot get the initial data
         (e.g. axios.js is missing so that we can't do POST in main.js ) -->
     <link rel="stylesheet" href="{{root}}/resources/simulator/main.css">
-    <link rel="stylesheet" href="{{root}}/resources/simulator/iview.css">
     <script type="text/javascript" src="{{root}}/resources/simulator/scripts/vendor.js"></script>
     <!-- v-cloak will remain on the element until the associated Vue instance finishes compilation.
         Combined with CSS rules, this directive can be used to hide un-compiled mustache bindings until the Vue instance is ready.  -->
@@ -63,11 +62,13 @@
                                     <i-input v-model="formItem.interval" placeholder=""
                                         @on-change="persistInputs" style="padding-top: 1px">
                                         <!-- padding-top=1px: because the ivu-input with append or prepend slot will have -1 px in padding -->
-                                        <i-select v-model="intervalUnit" slot="append" style="width: 120px" @on-change="persistInputs">
-                                            <i-option value="millisecond">millisecond(s)</i-option>
-                                            <i-option value="second">second(s)</i-option>
-                                            <i-option value="minute">minute(s)</i-option>
-                                        </i-select>
+                                        <template #append>
+                                            <i-select v-model="intervalUnit" style="width: 120px" @on-change="persistInputs">
+                                                <i-option value="millisecond">millisecond(s)</i-option>
+                                                <i-option value="second">second(s)</i-option>
+                                                <i-option value="minute">minute(s)</i-option>
+                                            </i-select>
+                                        </template>
                                     </i-input>
                                 </form-item>
                             </i-col>
@@ -79,17 +80,12 @@
                                         <Radio label="Plain Text">Plain Text</Radio>
                                         <Radio label="Dummy Json">Data Template
                                             <Tooltip theme="light" transfer max-width="500" placement="top-start">
-                                                <!-- Set transfer=true, to append the layer in body.
-                                          When used in Tabs or a fixed Table column, by adding this property,
-                                          Tooltip will not be affected by the parent style, resulting in better results. -->
                                                 <Icon type="md-information-circle" size="18"></Icon>
-                                                <!-- In the content slot, content should begin from the left,
-                                          otherwise unexpected space will be regarded as part of content -->
-                                                <div slot="content">
+                                                <template #content>
 <p>Using Dummy JSON to generate random data.
 <a href="https://github.com/webroo/dummy-json">Click here to see advanced usage. <Icon type="md-open"></Icon></a>
 </p>
-                                                </div>
+                                                </template>
                                             </Tooltip>
                                         </Radio>
                                     </radio-group>
@@ -129,10 +125,12 @@
             </i-col>
         </Row>
         <Modal v-model="status.isProcessing" scrollable width="380" :mask-closable="false" :closable="false">
-            <p slot="header" style="text-align: left;">
-                <Icon type="ios-information-circle" size="18" ></Icon>
-                <span>Sending D2C messages...</span>
-            </p>
+            <template #header>
+                <p style="text-align: left;">
+                    <Icon type="ios-information-circle" size="18" ></Icon>
+                    <span>Sending D2C messages...</span>
+                </p>
+            </template>
             <div style="text-align: left; margin-left: 24px;">
                 <p>
 					<b>{{status.numberOfSuccessfulMessage}}</b> message(s) are successfully sent;
@@ -140,14 +138,14 @@
 					<b>{{status.numberOfFailedMessage}}</b> message(s) are failed.
 				</p>
                 <i-progress status="active"
-                    :percent="Math.round((this.status.numberOfSuccessfulMessage + this.status.numberOfFailedMessage) / this.status.numberOfTotalMessage * 100)">
+                    :percent="Math.round((status.numberOfSuccessfulMessage + status.numberOfFailedMessage) / status.numberOfTotalMessage * 100)">
                 </i-progress>
             </div>
-            <div slot="footer">
+            <template #footer>
                 <div style="width: 80px;">
 				    <i-button type="primary" :disabled="cancelRequested" @click="progressCancel" style="width: 80px;">{{cancelRequested ? 'Canceling' : 'Cancel'}}</i-button>
                 </div>
-            </div>
+            </template>
         </Modal>
     </div>
     <script type="text/javascript" src="{{root}}/resources/simulator/scripts/simulator.js"></script>
