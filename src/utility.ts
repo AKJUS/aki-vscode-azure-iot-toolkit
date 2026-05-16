@@ -20,7 +20,6 @@ import { INode } from "./Nodes/INode";
 import { TelemetryClient } from "./telemetryClient";
 import { ReceivedEventData, EventData } from "@azure/event-hubs";
 import { AxiosRequestConfig, Method } from "axios";
-import { AzureAccount } from "./azure-account.api";
 import { CredentialStore } from "./credentialStore";
 import { ResultWithIncomingMessage } from "azure-iothub/dist/interfaces";
 
@@ -385,9 +384,6 @@ export class Utility {
         return result.responseBody;
     }
 
-    public static getAzureAccountApi(): AzureAccount {
-        return vscode.extensions.getExtension<AzureAccount>("ms-vscode.azure-account")!.exports;
-    }
 
     public static getMessageFromEventData(message: any): any {
         const config = Utility.getConfiguration();

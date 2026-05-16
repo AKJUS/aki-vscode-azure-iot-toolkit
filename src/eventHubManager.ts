@@ -29,7 +29,7 @@ export class EventHubManager extends IoTHubMessageBaseExplorer {
             this._outputChannel.show();
             this.outputLine(Constants.EventHubMonitorLabel, `Start monitoring message arrived in custom Event Hub endpoint [${eventHubItem.eventHubProperty.name}] ...`);
 
-            const eventHubClient = new EventHubManagementClient(eventHubItem.azureSubscription.session.credentials2 as any, eventHubItem.azureSubscription.subscription.subscriptionId);
+            const eventHubClient = new EventHubManagementClient(eventHubItem.credential, eventHubItem.subscriptionId);
 
             const connectionString = (await eventHubClient.namespaces.listKeys(eventHubItem.eventHubProperty.resourceGroup,
                 this.getNamespacefromConnectionString(eventHubItem.eventHubProperty.connectionString), "RootManageSharedAccessKey")).primaryConnectionString;

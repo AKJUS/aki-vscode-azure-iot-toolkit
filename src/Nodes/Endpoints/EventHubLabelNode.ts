@@ -2,15 +2,18 @@
 // Licensed under the MIT license.
 
 import { RoutingEventHubProperties } from "@azure/arm-iothub";
+import { TokenCredential } from "@azure/core-auth";
 import * as vscode from "vscode";
-import { AzureSubscription } from "../../azure-account.api";
 import { EventHubItem } from "../../Model/EventHubItem";
 import { INode } from "../INode";
 import { EventHubItemNode } from "./EventHubItemNode";
 
 export class EventHubLabelNode implements INode {
-    constructor(private azureSubscription: AzureSubscription, private eventHubProperties: RoutingEventHubProperties[]) {
-    }
+    constructor(
+        private credential: TokenCredential,
+        private subscriptionId: string,
+        private eventHubProperties: RoutingEventHubProperties[],
+    ) {}
 
     public getTreeItem(): vscode.TreeItem {
         return {
@@ -21,6 +24,7 @@ export class EventHubLabelNode implements INode {
     }
 
     public getChildren(): INode[] {
-        return this.eventHubProperties.map((eventHubProperty) => new EventHubItemNode(new EventHubItem(this.azureSubscription, eventHubProperty)));
+        return this.eventHubProperties.map((eventHubProperty) =>
+            new EventHubItemNode(new EventHubItem(this.credential, this.subscriptionId, eventHubProperty)));
     }
 }

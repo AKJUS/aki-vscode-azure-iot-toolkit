@@ -2,12 +2,12 @@
 // Licensed under the MIT license.
 
 import { IotHubClient, IotHubDescription } from "@azure/arm-iothub";
-import { createAzureClient, SubscriptionTreeItemBase } from "@microsoft/vscode-azext-azureutils";
 import { IActionContext } from "@microsoft/vscode-azext-utils";
+import { VSCodeSubscriptionTreeItemBase } from "../VSCodeAccountTreeItemBase";
 import { IoTHubResourceTreeItem } from "./IoTHubResourceTreeItem";
 
-// Represents an Azure sbuscription
-export class IoTHubSubscriptionTreeItem extends SubscriptionTreeItemBase {
+// Represents an Azure subscription
+export class IoTHubSubscriptionTreeItem extends VSCodeSubscriptionTreeItemBase {
     public readonly childTypeLabel: string = "IoT Hub";
 
     public hasMoreChildrenImpl(): boolean {
@@ -17,7 +17,8 @@ export class IoTHubSubscriptionTreeItem extends SubscriptionTreeItemBase {
     public async loadMoreChildrenImpl(_clearCache: boolean, _context: IActionContext): Promise<IoTHubResourceTreeItem[]> {
         _context.telemetry.properties.nodeType = "IotHub";
 
-        const client: IotHubClient = createAzureClient([_context, this], IotHubClient);
+        const sub = this.root;
+        const client = new IotHubClient(sub.credentials as any, sub.subscriptionId);
         const results: IoTHubResourceTreeItem[] = [];
         for await (const iotHub of client.iotHubResource.listBySubscription()) {
             results.push(new IoTHubResourceTreeItem(this, iotHub));

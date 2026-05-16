@@ -2,12 +2,12 @@
 // Licensed under the MIT license.
 
 import { IotDpsClient, ProvisioningServiceDescription } from "@azure/arm-deviceprovisioningservices";
-import { createAzureClient, SubscriptionTreeItemBase } from "@microsoft/vscode-azext-azureutils";
 import { IActionContext } from "@microsoft/vscode-azext-utils";
+import { VSCodeSubscriptionTreeItemBase } from "../VSCodeAccountTreeItemBase";
 import { DpsResourceTreeItem } from "./DpsResourceTreeItem";
 
-// Represents an Azure sbuscription
-export class DpsSubscriptionTreeItem extends SubscriptionTreeItemBase {
+// Represents an Azure subscription
+export class DpsSubscriptionTreeItem extends VSCodeSubscriptionTreeItemBase {
     public readonly childTypeLabel: string = "Device Provisioning Service";
 
     public hasMoreChildrenImpl(): boolean {
@@ -17,7 +17,8 @@ export class DpsSubscriptionTreeItem extends SubscriptionTreeItemBase {
     public async loadMoreChildrenImpl(_clearCache: boolean, _context: IActionContext): Promise<DpsResourceTreeItem[]> {
         _context.telemetry.properties.nodeType = "IotDps";
 
-        const client: IotDpsClient = createAzureClient([_context, this], IotDpsClient);
+        const sub = this.root;
+        const client = new IotDpsClient(sub.credentials as any, sub.subscriptionId);
         const results: DpsResourceTreeItem[] = [];
         for await (const dps of client.iotDpsResource.listBySubscription()) {
             results.push(new DpsResourceTreeItem(this, dps));

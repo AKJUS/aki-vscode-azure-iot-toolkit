@@ -2,10 +2,12 @@
 // Licensed under the MIT license.
 
 import { IotHubClient } from "@azure/arm-iothub";
+import { TokenCredential } from "@azure/core-auth";
 import * as vscode from "vscode";
 import { Constants } from "../../constants";
 import { TelemetryClient } from "../../telemetryClient";
 import { Utility } from "../../utility";
+import { ensureLoggedIn, getCredential, getSubscriptions } from "../../azureAuth";
 import { CommandNode } from "../CommandNode";
 import { INode } from "../INode";
 import { BuiltInEndpointLabelNode } from "./BuiltInEndpointLabelNode";
@@ -28,14 +30,13 @@ export class EndpointsLabelNode implements INode {
         TelemetryClient.sendEvent(Constants.IoTHubAILoadEndpointsTreeStartEvent);
 
         try {
-            const accountApi = Utility.getAzureAccountApi();
-            const subscriptionId = Constants.ExtensionContext.globalState.get(Constants.StateKeySubsID);
-            if (!subscriptionId || !(await accountApi.waitForLogin())) {
+            const subscriptionId = Constants.ExtensionContext.globalState.get<string>(Constants.StateKeySubsID);
+            if (!subscriptionId || !(await ensureLoggedIn())) {
                 return [this.getSelectIoTHubCommandNode()];
             }
 
-            const subscription = accountApi.subscriptions.find((element) => element.subscription.subscriptionId === subscriptionId);
-            const client = new IotHubClient(subscription.session.credentials2 as any, subscription.subscription.subscriptionId);
+            const credential = getCredential();
+            const client = new IotHubClient(credential, subscriptionId);
             const iotHubIterator = client.iotHubResource.listBySubscription();
             let iothub = undefined;
             const targetId = Constants.ExtensionContext.globalState.get(Constants.StateKeyIoTHubID);
@@ -52,7 +53,7 @@ export class EndpointsLabelNode implements INode {
             }
 
             return [new BuiltInEndpointLabelNode(),
-                new EventHubLabelNode(subscription, iothub.properties.routing.endpoints.eventHubs),
+                new EventHubLabelNode(credential, subscriptionId, iothub.properties.routing.endpoints.eventHubs),
                 new CustomEndpointLabelNode("Service Bus queue", iothub.properties.routing.endpoints.serviceBusQueues),
                 new CustomEndpointLabelNode("Service Bus topic", iothub.properties.routing.endpoints.serviceBusTopics),
                 new CustomEndpointLabelNode("Blob storage", iothub.properties.routing.endpoints.storageContainers)];
