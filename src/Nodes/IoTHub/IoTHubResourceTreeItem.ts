@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT license.
 
-import { IotHubModels } from "@azure/arm-iothub";
+import { IotHubDescription } from "@azure/arm-iothub";
 import { AzureParentTreeItem, AzureTreeItem, TreeItemIconPath } from "vscode-azureextensionui";
 import { TreeUtils } from "../../Utility/treeUtils";
 
@@ -9,10 +9,10 @@ import { TreeUtils } from "../../Utility/treeUtils";
 export class IoTHubResourceTreeItem extends AzureTreeItem {
     private static contextValue: string = "IotHub";
     public readonly contextValue: string = IoTHubResourceTreeItem.contextValue;
-    public readonly iotHub: IotHubModels.IotHubDescription;
+    public readonly iotHub: IotHubDescription;
     public readonly id: string;
     public readonly iconPath: TreeItemIconPath;
-    constructor(parent: AzureParentTreeItem, iotHub: IotHubModels.IotHubDescription) {
+    constructor(parent: AzureParentTreeItem, iotHub: IotHubDescription) {
         super(parent);
         this.iotHub = iotHub;
         this.id = this.iotHub.id || "";

@@ -6,7 +6,7 @@ import { ResourceManagementClient, ResourceManagementModels } from "@azure/arm-r
 import { SubscriptionClient } from "@azure/arm-subscriptions";
 import * as vscode from "vscode";
 import { AzExtTreeDataProvider, AzureTreeItem, IActionContext, createAzureClient, createAzureSubscriptionClient } from "vscode-azureextensionui";
-import { IotHubModels, IotHubClient } from "@azure/arm-iothub";
+import { IotHubClient, IotHubDescription, RoutingEventHubProperties, OperationInputs } from "@azure/arm-iothub";
 import { AzureAccount } from "./azure-account.api";
 import { BaseExplorer } from "./baseExplorer";
 import { Constants } from "./constants";
@@ -29,7 +29,7 @@ export class IoTHubResourceExplorer extends BaseExplorer {
         this.accountApi = Utility.getAzureAccountApi();
     }
 
-    public async createIoTHub(outputChannel: vscode.OutputChannel = this._outputChannel, subscriptionId?: string, resourceGroupName?: string): Promise<IotHubModels.IotHubDescription> {
+    public async createIoTHub(outputChannel: vscode.OutputChannel = this._outputChannel, subscriptionId?: string, resourceGroupName?: string): Promise<IotHubDescription> {
         TelemetryClient.sendEvent(Constants.IoTHubAICreateStartEvent);
         if (!(await this.waitForLogin())) {
             return;
@@ -108,7 +108,7 @@ export class IoTHubResourceExplorer extends BaseExplorer {
                     capacity: 1,
                 },
             };
-            return client.iotHubResource.createOrUpdate(resourceGroupName, name, iotHubCreateParams)
+            return client.iotHubResource.beginCreateOrUpdateAndWait(resourceGroupName, name, iotHubCreateParams as any)
                 .then(async (iotHubDescription) => {
                     clearInterval(intervalID);
                     outputChannel.appendLine("");
@@ -137,7 +137,7 @@ export class IoTHubResourceExplorer extends BaseExplorer {
         });
     }
 
-    public async selectIoTHub(outputChannel: vscode.OutputChannel = this._outputChannel, subscriptionId?: string): Promise<IotHubModels.IotHubDescription> {
+    public async selectIoTHub(outputChannel: vscode.OutputChannel = this._outputChannel, subscriptionId?: string): Promise<IotHubDescription> {
         TelemetryClient.sendEvent("General.Select.IoTHub.Start");
         if (!(await this.waitForLogin())) {
             return;
@@ -255,8 +255,10 @@ export class IoTHubResourceExplorer extends BaseExplorer {
             subscriptionId: subscription.subscriptionId,
             environment: session.environment
         }, IotHubClient);
-        const iotHubs = await client.iotHubResource.listBySubscription();
-        iotHubItems.push(...iotHubs.map((iotHub) => new IotHubItem(iotHub)));
+        const iotHubIterator = client.iotHubResource.listBySubscription();
+        for await (const iotHub of iotHubIterator) {
+            iotHubItems.push(new IotHubItem(iotHub));
+        }
         iotHubItems.sort((a, b) => a.label.localeCompare(b.label));
         TelemetryClient.sendEvent("General.Load.IoTHub", { IoTHubCount: iotHubItems.length.toString() });
         return iotHubItems;
@@ -286,7 +288,7 @@ export class IoTHubResourceExplorer extends BaseExplorer {
         credentials: any,
         subscriptionId: string,
         environment: Environment,
-        iotHubDescription: IotHubModels.IotHubDescription): Promise<string>
+        iotHubDescription: IotHubDescription): Promise<string>
     {
         const iotHubConnectionString = await this.getIoTHubConnectionString(credentials,
             subscriptionId, environment, iotHubDescription);
@@ -307,7 +309,7 @@ export class IoTHubResourceExplorer extends BaseExplorer {
         await CredentialStore.setPassword(Constants.IotHubConnectionStringKey, iotHubConnectionString);
     }
 
-    private async getIoTHubConnectionString(credentials: any, subscriptionId: string, environment: Environment, iotHubDescription: IotHubModels.IotHubDescription) {
+    private async getIoTHubConnectionString(credentials: any, subscriptionId: string, environment: Environment, iotHubDescription: IotHubDescription) {
         const client = createAzureClient({
             credentials,
             subscriptionId,
@@ -317,7 +319,7 @@ export class IoTHubResourceExplorer extends BaseExplorer {
             return `HostName=${iotHubDescription.properties.hostName};SharedAccessKeyName=${result.keyName};SharedAccessKey=${result.primaryKey}`;
         });
     }
-    private async getEventHubConnectionString(credentials: any, subscriptionId: string, environment: Environment, iotHubDescription: IotHubModels.IotHubDescription) {
+    private async getEventHubConnectionString(credentials: any, subscriptionId: string, environment: Environment, iotHubDescription: IotHubDescription) {
         const client = createAzureClient({
             credentials,
             subscriptionId,
@@ -386,8 +388,12 @@ export class IoTHubResourceExplorer extends BaseExplorer {
         const subscriptionClient =  createAzureSubscriptionClient({
             credentials: subscriptionItem.session.credentials2,
             environment: subscriptionItem.session.environment}, SubscriptionClient);
-        const locations = await subscriptionClient.subscriptions.listLocations(subscriptionItem.subscription.subscriptionId);
-        return locations.map((location) => new LocationItem(location));
+        const locationIterator = subscriptionClient.subscriptions.listLocations(subscriptionItem.subscription.subscriptionId);
+        const locations: LocationItem[] = [];
+        for await (const location of locationIterator) {
+            locations.push(new LocationItem(location));
+        }
+        return locations;
     }
 
     private async getIoTHubName(subscriptionItem: SubscriptionItem): Promise<string> {
@@ -411,7 +417,7 @@ export class IoTHubResourceExplorer extends BaseExplorer {
             }
 
             try {
-                const nameAvailable = (await client.iotHubResource.checkNameAvailability(accountName)).nameAvailable;
+                const nameAvailable = (await client.iotHubResource.checkNameAvailability({ name: accountName })).nameAvailable;
                 if (nameAvailable) {
                     return accountName;
                 } else {

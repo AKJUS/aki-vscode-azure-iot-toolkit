@@ -4,7 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { Event, Terminal, Progress, CancellationToken } from 'vscode';
-import { SubscriptionModels } from "@azure/arm-subscriptions";
+import { Subscription } from "@azure/arm-subscriptions";
 import { Environment } from "@azure/ms-rest-azure-env";
 import { ReadStream } from 'fs';
 import { TokenCredentialsBase } from '@azure/ms-rest-nodeauth';
@@ -35,7 +35,7 @@ export interface AzureSession {
 
 export interface AzureSubscription {
 	readonly session: AzureSession;
-	readonly subscription: SubscriptionModels.Subscription;
+	readonly subscription: Subscription;
 }
 
 export type AzureResourceFilter = AzureSubscription;

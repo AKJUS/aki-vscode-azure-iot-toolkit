@@ -5,7 +5,7 @@
 import { ResultWithHttpResponse } from "azure-iot-common";
 import { ConnectionString as DeviceConnectionString, SharedAccessSignature as DeviceSharedAccessSignature } from "azure-iot-device";
 import { ConnectionString, Registry, SharedAccessSignature, Twin } from "azure-iothub";
-import { IotHubModels} from "@azure/arm-iothub";
+import { IotHubDescription } from "@azure/arm-iothub";
 import * as crypto from "crypto";
 import * as fs from "fs";
 import * as os from "os";
@@ -417,7 +417,7 @@ export class Utility {
         return message.enqueuedTimeUtc ? `[${message.enqueuedTimeUtc.toLocaleTimeString("en-US")}] ` : "";
     }
 
-    public static async storeIoTHubInfo(subscriptionId: string, iotHubDescription: IotHubModels.IotHubDescription) {
+    public static async storeIoTHubInfo(subscriptionId: string, iotHubDescription: IotHubDescription) {
         await Constants.ExtensionContext.globalState.update(Constants.StateKeySubsID, subscriptionId);
         await Constants.ExtensionContext.globalState.update(Constants.StateKeyIoTHubID, iotHubDescription.id);
     }

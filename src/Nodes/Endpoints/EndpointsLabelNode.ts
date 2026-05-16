@@ -41,9 +41,15 @@ export class EndpointsLabelNode implements INode {
                 subscriptionId: subscription.subscription.subscriptionId,
                 environment: subscription.session.environment
             }, IotHubClient);
-            const iotHubs = await client.iotHubResource.listBySubscription();
-            const iothub = iotHubs.find((element) =>
-                element.id === Constants.ExtensionContext.globalState.get(Constants.StateKeyIoTHubID));
+            const iotHubIterator = client.iotHubResource.listBySubscription();
+            let iothub = undefined;
+            const targetId = Constants.ExtensionContext.globalState.get(Constants.StateKeyIoTHubID);
+            for await (const element of iotHubIterator) {
+                if (element.id === targetId) {
+                    iothub = element;
+                    break;
+                }
+            }
             TelemetryClient.sendEvent(Constants.IoTHubAILoadEndpointsTreeDoneEvent, { Result: "Success" });
 
             if (!iothub) {

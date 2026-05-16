@@ -1,6 +1,6 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT license.
-import { IotDpsClient, IotDpsModels } from "@azure/arm-deviceprovisioningservices";
+import { IotDpsClient, ProvisioningServiceDescription } from "@azure/arm-deviceprovisioningservices";
 import * as vscode from "vscode";
 import { AzExtTreeDataProvider, AzureTreeItem, createAzureClient, IActionContext, openReadOnlyJson } from "vscode-azureextensionui";
 import { BaseExplorer } from "./baseExplorer";
@@ -22,7 +22,7 @@ export class DpsResourceExplorer extends BaseExplorer {
 
         const client: IotDpsClient = createAzureClient(node.root, IotDpsClient);
         const matchResult = Constants.DpsResourceGroupNameRegex.exec(node.fullId);
-        let dpsInfo: IotDpsModels.ProvisioningServiceDescription = null;
+        let dpsInfo: ProvisioningServiceDescription = null;
         if (matchResult != null) {
             const resourecGroupName = matchResult[1];
             dpsInfo = await client.iotDpsResource.get(node.dps.name, resourecGroupName);
