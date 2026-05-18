@@ -8,15 +8,21 @@ import { Constants } from "./constants";
 import { NSAT } from "./nsat";
 import { Utility } from "./utility";
 
-const packageJSON = vscode.extensions.getExtension(Constants.ExtensionId).packageJSON;
-const aiKey: string = packageJSON.aiKey;
-
 export class TelemetryClient {
     public static initialize(context: vscode.ExtensionContext) {
         this._extensionContext = context;
+        // Lazy-initialize TelemetryReporter after extension context is ready
+        if (!this._client) {
+            const packageJSON = vscode.extensions.getExtension(Constants.ExtensionId)?.packageJSON;
+            const aiKey: string = packageJSON?.aiKey || "";
+            this._client = new TelemetryReporter(`InstrumentationKey=${aiKey}`);
+        }
     }
 
     public static async sendEvent(eventName: string, properties?: { [key: string]: string; }, iotHubConnectionString?: string, measurements?: { [key: string]: number }) {
+        if (!this._client) {
+            return;
+        }
         properties = await this.addCommonProperties(properties, iotHubConnectionString);
         const errorProperties = Object.values(Constants.errorProperties);
         if (this.hasErrorProperties(properties, errorProperties)) {
@@ -32,7 +38,7 @@ export class TelemetryClient {
         }
     }
 
-    private static _client = new TelemetryReporter(`InstrumentationKey=${aiKey}`);
+    private static _client: TelemetryReporter | undefined;
     private static _extensionContext: vscode.ExtensionContext;
     private static _isInternal: boolean = TelemetryClient.isInternalUser();
 

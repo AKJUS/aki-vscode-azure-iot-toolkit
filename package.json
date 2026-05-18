@@ -31,6 +31,7 @@
     "dps"
   ],
   "activationEvents": [
+    "onStartupFinished",
     "onView:iotHubDevices",
     "onView:iotDpsExplorer",
     "onView:iotHubExplorer",
