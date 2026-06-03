@@ -2,12 +2,11 @@
 // Licensed under the MIT license.
 
 import { IotHubClient } from "@azure/arm-iothub";
-import { TokenCredential } from "@azure/core-auth";
 import * as vscode from "vscode";
 import { Constants } from "../../constants";
 import { TelemetryClient } from "../../telemetryClient";
 import { Utility } from "../../utility";
-import { ensureLoggedIn, getCredential, getSubscriptions } from "../../azureAuth";
+import { ensureLoggedIn, getCredential } from "../../azureAuth";
 import { CommandNode } from "../CommandNode";
 import { INode } from "../INode";
 import { BuiltInEndpointLabelNode } from "./BuiltInEndpointLabelNode";
@@ -58,8 +57,9 @@ export class EndpointsLabelNode implements INode {
                 new CustomEndpointLabelNode("Service Bus topic", iothub.properties.routing.endpoints.serviceBusTopics),
                 new CustomEndpointLabelNode("Blob storage", iothub.properties.routing.endpoints.storageContainers)];
         } catch (err) {
-            TelemetryClient.sendEvent(Constants.IoTHubAILoadEndpointsTreeDoneEvent, { Result: "Fail", [Constants.errorProperties.Message]: err.message });
-            return Utility.getErrorMessageTreeItems("endpoints", err.message);
+            const message = err instanceof Error ? err.message : String(err);
+            TelemetryClient.sendEvent(Constants.IoTHubAILoadEndpointsTreeDoneEvent, { Result: "Fail", [Constants.errorProperties.Message]: message });
+            return Utility.getErrorMessageTreeItems("endpoints", message);
         }
     }
 

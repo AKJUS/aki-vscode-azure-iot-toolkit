@@ -7,9 +7,13 @@ function main() {
 
     document.querySelectorAll("a").forEach(function (link) {
         link.addEventListener("click", function (event) {
-            vscode.postMessage({
-                href: event.target.href
-            });
+            event.preventDefault();
+            const anchor = event.currentTarget;
+            if (anchor && anchor.href) {
+                vscode.postMessage({
+                    href: anchor.href
+                });
+            }
         });
     });
 

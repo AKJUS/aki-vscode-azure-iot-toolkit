@@ -35,5 +35,7 @@ export class CredentialStore {
         if (this._secrets) {
             await this._secrets.delete(`${Constants.ExtensionId}.${account}`);
         }
+        // Also clear legacy globalState to prevent fallback from resurfacing old values
+        await Constants.ExtensionContext.globalState.update(account, undefined);
     }
 }
