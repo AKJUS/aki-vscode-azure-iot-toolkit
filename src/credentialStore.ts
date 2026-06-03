@@ -26,6 +26,8 @@ export class CredentialStore {
     public static async setPassword(account: string, password: string) {
         if (this._secrets) {
             await this._secrets.store(`${Constants.ExtensionId}.${account}`, password);
+            // Clear legacy globalState to prevent fallback to stale values
+            await Constants.ExtensionContext.globalState.update(account, undefined);
         } else {
             await Constants.ExtensionContext.globalState.update(account, password);
         }
