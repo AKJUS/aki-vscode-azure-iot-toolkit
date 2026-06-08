@@ -47,19 +47,30 @@ export class IotHubC2DMessageExplorer extends IoTHubMessageBaseExplorer {
 
         const deviceConnectionString: string = deviceItem.connectionString;
         this._outputChannel.show();
-        this._deviceClient = clientFromConnectionString(deviceConnectionString);
-        this._deviceClient.open(this.connectCallback(deviceConnectionString));
+        try {
+            this._deviceClient = clientFromConnectionString(deviceConnectionString);
+            this._deviceClient.on("error", (err) => {
+                this.outputLine(Constants.IoTHubC2DMessageMonitorLabel, `Transport error: ${err.message || err}`);
+                this.updateMonitorStatus(false);
+            });
+            this._deviceClient.open(this.connectCallback(deviceConnectionString));
+        } catch (e) {
+            this.outputLine(Constants.IoTHubC2DMessageMonitorLabel, `Failed to create MQTT client: ${e.message || e}`);
+            this.updateMonitorStatus(false);
+            TelemetryClient.sendEvent(Constants.IoTHubAIStartMonitorC2DEvent, { Result: "Exception", [Constants.errorProperties.Message]: e.message || String(e) });
+        }
     }
 
     public stopMonitorC2DMessage() {
         TelemetryClient.sendEvent(Constants.IoTHubAIStopMonitorC2DEvent);
         this._outputChannel.show();
-        if (this._isMonitoring) {
+        if (this._isMonitoring && this._deviceClient) {
             this.outputLine(Constants.IoTHubC2DMessageMonitorLabel, "C2D receiving stopped.");
             this._monitorStatusBarItem.hide();
             this._deviceClient.close(() => { this.updateMonitorStatus(false); });
         } else {
             this.outputLine(Constants.IoTHubC2DMessageMonitorLabel, "No C2D monitor job running.");
+            this.updateMonitorStatus(false);
         }
     }
 
@@ -84,8 +95,9 @@ export class IotHubC2DMessageExplorer extends IoTHubMessageBaseExplorer {
     private connectCallback(deviceConnectionString: string) {
         return (err) => {
             if (err) {
-                this.outputLine(Constants.IoTHubC2DMessageMonitorLabel, err);
-                TelemetryClient.sendEvent(Constants.IoTHubAIStartMonitorC2DEvent, { Result: "Exception", [Constants.errorProperties.Message]: err });
+                this.outputLine(Constants.IoTHubC2DMessageMonitorLabel, `Connection failed: ${err.message || err}`);
+                this.updateMonitorStatus(false);
+                TelemetryClient.sendEvent(Constants.IoTHubAIStartMonitorC2DEvent, { Result: "Exception", [Constants.errorProperties.Message]: err.message || String(err) });
             } else {
                 this.updateMonitorStatus(true);
                 const deviceId = ConnectionString.parse(deviceConnectionString).DeviceId;

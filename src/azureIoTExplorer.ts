@@ -3,7 +3,7 @@
 
 "use strict";
 import * as vscode from "vscode";
-import { AzExtTreeDataProvider, AzureTreeItem, IActionContext } from "vscode-azureextensionui";
+import { AzExtTreeDataProvider, AzExtTreeItem, IActionContext } from "@microsoft/vscode-azext-utils";
 import { CodeManager } from "./codeManager";
 import { Constants, DistributedSettingUpdateType } from "./constants";
 import { DeviceExplorer } from "./deviceExplorer";
@@ -133,11 +133,11 @@ export class AzureIoTExplorer {
         await this._iotHubResourceExplorer.setIoTHub(context, node);
     }
 
-    public async loadMore(actionContext: IActionContext, node: AzureTreeItem): Promise<void> {
+    public async loadMore(actionContext: IActionContext, node: AzExtTreeItem): Promise<void> {
         await this._iotHubResourceExplorer.loadMore(actionContext, node);
     }
 
-    public async refresh(context: IActionContext, node?: AzureTreeItem) {
+    public async refresh(context: IActionContext, node?: AzExtTreeItem) {
         await this._iotHubResourceExplorer.refresh(context, node);
     }
 
@@ -185,8 +185,8 @@ export class AzureIoTExplorer {
         this._welcomePage.show();
     }
 
-    public generateCode(deviceItem: DeviceItem): void {
-        this._codeManager.generateCode(deviceItem);
+    public async generateCode(deviceItem: DeviceItem): Promise<void> {
+        await this._codeManager.generateCode(deviceItem);
     }
 
     public createModule(deviceNode: DeviceNode): void {

@@ -2,7 +2,7 @@
 // Licensed under the MIT license.
 
 "use strict";
-import Ajv from "ajv";
+import Ajv from "ajv-draft-04";
 import axios from "axios";
 import * as iothub from "azure-iothub";
 import * as fs from "fs";
@@ -106,8 +106,7 @@ export class IoTEdgeExplorer extends BaseExplorer {
 
     private async isValidDeploymentJsonSchema(json: object): Promise<boolean> {
         const schema = (await axios.get(Constants.DeploymentJsonSchemaUrl)).data;
-        const ajv = new Ajv({ allErrors: true, schemaId: "id" });
-        ajv.addMetaSchema(require("ajv/lib/refs/json-schema-draft-04.json"));
+        const ajv = new Ajv({ allErrors: true });
         const valid = ajv.validate(schema, json);
         if (!valid) {
             vscode.window.showErrorMessage(`There are errors in deployment json file: ${ajv.errorsText(null, { separator: ", " })}`);

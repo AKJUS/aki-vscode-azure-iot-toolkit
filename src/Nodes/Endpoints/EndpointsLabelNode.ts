@@ -3,10 +3,10 @@
 
 import { IotHubClient } from "@azure/arm-iothub";
 import * as vscode from "vscode";
-import { createAzureClient} from "vscode-azureextensionui";
 import { Constants } from "../../constants";
 import { TelemetryClient } from "../../telemetryClient";
 import { Utility } from "../../utility";
+import { ensureLoggedIn, getCredential } from "../../azureAuth";
 import { CommandNode } from "../CommandNode";
 import { INode } from "../INode";
 import { BuiltInEndpointLabelNode } from "./BuiltInEndpointLabelNode";
@@ -29,21 +29,22 @@ export class EndpointsLabelNode implements INode {
         TelemetryClient.sendEvent(Constants.IoTHubAILoadEndpointsTreeStartEvent);
 
         try {
-            const accountApi = Utility.getAzureAccountApi();
-            const subscriptionId = Constants.ExtensionContext.globalState.get(Constants.StateKeySubsID);
-            if (!subscriptionId || !(await accountApi.waitForLogin())) {
+            const subscriptionId = Constants.ExtensionContext.globalState.get<string>(Constants.StateKeySubsID);
+            if (!subscriptionId || !(await ensureLoggedIn())) {
                 return [this.getSelectIoTHubCommandNode()];
             }
 
-            const subscription = accountApi.subscriptions.find((element) => element.subscription.subscriptionId === subscriptionId);
-            const client = createAzureClient({
-                credentials: subscription.session.credentials2,
-                subscriptionId: subscription.subscription.subscriptionId,
-                environment: subscription.session.environment
-            }, IotHubClient);
-            const iotHubs = await client.iotHubResource.listBySubscription();
-            const iothub = iotHubs.find((element) =>
-                element.id === Constants.ExtensionContext.globalState.get(Constants.StateKeyIoTHubID));
+            const credential = getCredential();
+            const client = new IotHubClient(credential, subscriptionId);
+            const iotHubIterator = client.iotHubResource.listBySubscription();
+            let iothub = undefined;
+            const targetId = Constants.ExtensionContext.globalState.get(Constants.StateKeyIoTHubID);
+            for await (const element of iotHubIterator) {
+                if (element.id === targetId) {
+                    iothub = element;
+                    break;
+                }
+            }
             TelemetryClient.sendEvent(Constants.IoTHubAILoadEndpointsTreeDoneEvent, { Result: "Success" });
 
             if (!iothub) {
@@ -51,13 +52,14 @@ export class EndpointsLabelNode implements INode {
             }
 
             return [new BuiltInEndpointLabelNode(),
-                new EventHubLabelNode(subscription, iothub.properties.routing.endpoints.eventHubs),
+                new EventHubLabelNode(credential, subscriptionId, iothub.properties.routing.endpoints.eventHubs),
                 new CustomEndpointLabelNode("Service Bus queue", iothub.properties.routing.endpoints.serviceBusQueues),
                 new CustomEndpointLabelNode("Service Bus topic", iothub.properties.routing.endpoints.serviceBusTopics),
                 new CustomEndpointLabelNode("Blob storage", iothub.properties.routing.endpoints.storageContainers)];
         } catch (err) {
-            TelemetryClient.sendEvent(Constants.IoTHubAILoadEndpointsTreeDoneEvent, { Result: "Fail", [Constants.errorProperties.Message]: err.message });
-            return Utility.getErrorMessageTreeItems("endpoints", err.message);
+            const message = err instanceof Error ? err.message : String(err);
+            TelemetryClient.sendEvent(Constants.IoTHubAILoadEndpointsTreeDoneEvent, { Result: "Fail", [Constants.errorProperties.Message]: message });
+            return Utility.getErrorMessageTreeItems("endpoints", message);
         }
     }
 

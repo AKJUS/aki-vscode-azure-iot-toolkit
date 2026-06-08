@@ -13,7 +13,7 @@ import { Utility } from "./utility";
 export class DeviceTree implements vscode.TreeDataProvider<INode> {
     public _onDidChangeTreeData: vscode.EventEmitter<INode | undefined> = new vscode.EventEmitter<INode | undefined>();
     public readonly onDidChangeTreeData: vscode.Event<INode | undefined> = this._onDidChangeTreeData.event;
-    private autoRefreshIntervalID: NodeJS.Timer;
+    private autoRefreshIntervalID: ReturnType<typeof setInterval>;
 
     constructor(private context: vscode.ExtensionContext) {
     }
@@ -59,7 +59,7 @@ export class DeviceTree implements vscode.TreeDataProvider<INode> {
         return [new IoTHubLabelNode(iotHubConnectionString), new DeviceLabelNode(iotHubConnectionString), new EndpointsLabelNode()];
     }
 
-    private generateAutoRefreshInterval(): NodeJS.Timer {
+    private generateAutoRefreshInterval(): ReturnType<typeof setInterval> {
         const treeViewAutoRefreshEnable = Utility.getConfig<boolean>(Constants.TreeViewAutoRefreshEnableKey);
         if (treeViewAutoRefreshEnable) {
             const treeViewAutoRefreshIntervalInSeconds = Utility.getConfig<number>(Constants.TreeViewAutoRefreshIntervalInSecondsKey);

@@ -1,5 +1,6 @@
-import iView from 'iview';
-import Vue from 'vue';
+import { createApp } from 'vue';
+import ViewUIPlus from 'view-ui-plus';
+import 'view-ui-plus/dist/styles/viewuiplus.css';
 import axios from 'axios';
 
 let vscode;
@@ -59,10 +60,7 @@ const defaultValue = {
   dummyJsonArea: dummyJsonTemplate
 };
 
-Vue.use(iView);
-
-const app = new Vue({
-  el: "#app",
+const app = createApp({
   data() {
     const numberValidator = (rule, value, callback) => {
       if (value === "") {
@@ -203,7 +201,7 @@ const app = new Vue({
               ? data.plainTextArea
               : defaultValue.plainTextArea;
           this.textArea.dummyJsonArea =
-            data.dummyJsonArea && DataTransfer.dummyJsonArea !== ""
+            data.dummyJsonArea && data.dummyJsonArea !== ""
               ? data.dummyJsonArea
               : defaultValue.dummyJsonArea;
           await this.textAreaOnChange();
@@ -348,3 +346,6 @@ const app = new Vue({
     }
   }
 });
+
+app.use(ViewUIPlus);
+app.mount('#app');

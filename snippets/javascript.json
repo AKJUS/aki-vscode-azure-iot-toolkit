@@ -58,7 +58,7 @@
             "\t.then(client.getPartitionIds.bind(client))",
             "\t.then(function (partitionIds) {",
             "\t\treturn partitionIds.map(function (partitionId) {",
-            "\t\t\treturn client.createReceiver('$$Default', partitionId, {",
+            "\t\t\treturn client.createReceiver('\\$\\$Default', partitionId, {",
             "\t\t\t\t'startAfterTime': Date.now()",
             "\t\t\t}).then(function (receiver) {",
             "\t\t\t\tconsole.log('Created partition receiver: ' + partitionId)",

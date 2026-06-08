@@ -35,7 +35,9 @@ export class IoTHubMessageBaseExplorer extends BaseExplorer {
         if (this._isMonitoring) {
             this.outputLine(label, `Stopping ${endpointType} monitoring...`);
             this._monitorStatusBarItem.hide();
-            await eventHubClient.close();
+            if (eventHubClient) {
+                await eventHubClient.close();
+            }
             this.outputLine(label, `${endpointType.charAt(0).toUpperCase() + endpointType.substr(1)} monitoring stopped.`);
             this.updateMonitorStatus(false);
         } else {

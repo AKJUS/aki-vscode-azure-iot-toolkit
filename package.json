@@ -2,12 +2,12 @@
   "name": "azure-iot-toolkit",
   "displayName": "Azure IoT Hub",
   "description": "Interact with Azure IoT Hub, IoT Device Management, IoT Edge Management, IoT Hub Device Simulation, IoT Hub Code Generation and IoT Hub Device Provisioning Service (DPS).",
-  "version": "2.17.3",
+  "version": "2.18.0",
   "publisher": "vsciot-vscode",
   "aiKey": "0caaff90-cc1c-4def-b64c-3ef33615bc9b",
   "icon": "logo.png",
   "engines": {
-    "vscode": "^1.65.1"
+    "vscode": "^1.75.0"
   },
   "license": "SEE LICENSE IN LICENSE.txt",
   "repository": {
@@ -31,7 +31,7 @@
     "dps"
   ],
   "activationEvents": [
-    "*",
+    "onStartupFinished",
     "onView:iotHubDevices",
     "onView:iotDpsExplorer",
     "onView:iotHubExplorer",
@@ -51,6 +51,7 @@
     "onCommand:azure-iot-toolkit.refresh",
     "onCommand:azure-iot-toolkit.selectIoTHub",
     "onCommand:azure-iot-toolkit.copyIoTHubConnectionString",
+    "onCommand:azure-iot-toolkit.clearIoTHubConnectionString",
     "onCommand:azure-iot-toolkit.copyDeviceConnectionString",
     "onCommand:azure-iot-toolkit.createEdgeDevice",
     "onCommand:azure-iot-toolkit.createDeployment",
@@ -71,7 +72,10 @@
     "onCommand:azure-iot-toolkit.stopMonitorCustomEventHubEndpoint",
     "onCommand:azure-iot-dps.viewProperties",
     "onCommand:azure-iot-dps.loadMore",
-    "onCommand:azure-iot-dps.refresh"
+    "onCommand:azure-iot-dps.refresh",
+    "onCommand:azure-iot-hub.setIoTHub",
+    "onCommand:azure-iot-hub.loadMore",
+    "onCommand:azure-iot-hub.refresh"
   ],
   "main": "./dist/extension",
   "contributes": {
@@ -92,6 +96,10 @@
         }
       ],
       "azure": [
+        {
+          "id": "iotHubExplorer",
+          "name": "IoT Hub"
+        },
         {
           "id": "iotDpsExplorer",
           "name": "IoT Hub Device Provisioning Service"
@@ -192,6 +200,11 @@
       {
         "command": "azure-iot-toolkit.copyIoTHubConnectionString",
         "title": "%azure-iot-toolkit.command.copyIoTHubConnectionString.title%",
+        "category": "%azure-iot-toolkit.category%"
+      },
+      {
+        "command": "azure-iot-toolkit.clearIoTHubConnectionString",
+        "title": "Clear IoT Hub Connection String",
         "category": "%azure-iot-toolkit.category%"
       },
       {
@@ -316,6 +329,25 @@
           "light": "resources/light/refresh.svg",
           "dark": "resources/dark/refresh.svg"
         }
+      },
+      {
+        "command": "azure-iot-hub.setIoTHub",
+        "title": "Select IoT Hub",
+        "category": "Azure IoT Hub"
+      },
+      {
+        "command": "azure-iot-hub.loadMore",
+        "title": "Load More",
+        "category": "Azure IoT Hub"
+      },
+      {
+        "command": "azure-iot-hub.refresh",
+        "title": "Refresh",
+        "category": "Azure IoT Hub",
+        "icon": {
+          "light": "resources/light/refresh.svg",
+          "dark": "resources/dark/refresh.svg"
+        }
       }
     ],
     "menus": {
@@ -376,9 +408,14 @@
           "group": "azure-iot-toolkit-4@0"
         },
         {
-          "command": "azure-iot-toolkit.updateDistributedTracingSetting",
+          "command": "azure-iot-toolkit.clearIoTHubConnectionString",
           "when": "view == iotHubDevices",
           "group": "azure-iot-toolkit-4@1"
+        },
+        {
+          "command": "azure-iot-toolkit.updateDistributedTracingSetting",
+          "when": "view == iotHubDevices",
+          "group": "azure-iot-toolkit-4@2"
         },
         {
           "command": "azure-iot-toolkit.sendD2CMessage",
@@ -388,6 +425,11 @@
         {
           "command": "azure-iot-dps.refresh",
           "when": "view == iotDpsExplorer",
+          "group": "navigation"
+        },
+        {
+          "command": "azure-iot-hub.refresh",
+          "when": "view == iotHubExplorer",
           "group": "navigation"
         }
       ],
@@ -632,6 +674,14 @@
         {
           "command": "azure-iot-dps.refresh",
           "when": "view == iotDpsExplorer && viewItem == azureextensionui.azureSubscription"
+        },
+        {
+          "command": "azure-iot-hub.setIoTHub",
+          "when": "view == iotHubExplorer && viewItem == IotHub"
+        },
+        {
+          "command": "azure-iot-hub.refresh",
+          "when": "view == iotHubExplorer && viewItem == azureextensionui.azureSubscription"
         }
       ],
       "editor/context": [
@@ -713,6 +763,10 @@
         {
           "command": "azure-iot-dps.loadMore",
           "when": "never"
+        },
+        {
+          "command": "azure-iot-hub.loadMore",
+          "when": "never"
         }
       ]
     },
@@ -750,6 +804,13 @@
           "default": false,
           "description": "%azure-iot-toolkit.configuration.iotHubD2CMessageStringify.description%"
         },
+        "azure-iot-toolkit.deviceQueryPageSize": {
+          "type": "integer",
+          "default": 100,
+          "minimum": 1,
+          "maximum": 1000,
+          "description": "Number of devices to fetch per page when querying the IoT Hub device registry."
+        },
         "azure-iot-toolkit.showIoTHubInfo": {
           "type": "boolean",
           "default": true,
@@ -782,7 +843,7 @@
   "scripts": {
     "vscode:prepublish": "rimraf dist && npm run resources:clean && webpack --mode production",
     "compile": "tsc -p ./",
-    "tslint": "tslint -t verbose src/**/*.ts test/**/*.ts --exclude src/**/*.d.ts",
+    "lint": "eslint src/**/*.ts test/**/*.ts",
     "version": "tsc -v",
     "test": "npm run compile && node ./out/test/runTests.js",
     "simulator:clean": "rimraf resources/simulator/scripts",
@@ -796,53 +857,54 @@
     "@types/body-parser": "^1.19.0",
     "@types/express": "^4.17.7",
     "@types/fs-extra": "^9.0.1",
-    "@types/keytar": "^4.4.2",
-    "@types/mocha": "^8.2.1",
-    "@types/node": "^14.6.0",
+    "@types/mocha": "^10.0.10",
+    "@types/node": "^20.19.41",
     "@types/node-fetch": "^2.5.7",
     "@types/terser-webpack-plugin": "^5.0.3",
-    "@types/vscode": "^1.40.0",
-    "copy-webpack-plugin": "^6.0.3",
+    "@types/vscode": "^1.75.0",
+    "@typescript-eslint/eslint-plugin": "^7.18.0",
+    "@typescript-eslint/parser": "^7.18.0",
+    "@vscode/test-electron": "^2.5.2",
+    "css-loader": "^7.1.4",
+    "eslint": "^8.57.1",
     "fail-on-errors-webpack-plugin": "^3.0.0",
-    "mocha": "^9.2.2",
+    "mocha": "^10.8.2",
     "rimraf": "^3.0.2",
     "shebang-loader": "0.0.1",
+    "style-loader": "^4.0.0",
     "terser-webpack-plugin": "^5.1.1",
-    "ts-loader": "^8.0.2",
-    "tslint": "^6.1.3",
-    "typescript": "^3.9.7",
+    "ts-loader": "^9.5.7",
+    "typescript": "~5.5",
     "webpack": "^5.30.0",
-    "webpack-cli": "^4.9.2"
+    "webpack-cli": "^5.1.4"
   },
   "dependencies": {
-    "@azure/arm-deviceprovisioningservices": "^2.1.0",
-    "@azure/arm-eventhub": "^3.2.0",
-    "@azure/arm-iothub": "^3.0.0",
-    "@azure/arm-subscriptions": "^2.0.0",
-    "@azure/event-hubs": "^5.2.2",
+    "@azure/arm-deviceprovisioningservices": "^5.1.0",
+    "@azure/arm-eventhub": "^5.2.0",
+    "@azure/arm-iothub": "^6.3.0",
+    "@azure/arm-resources": "^7.0.0",
+    "@azure/arm-subscriptions": "^5.1.1",
+    "@azure/core-auth": "^1.10.1",
+    "@azure/event-hubs": "^5.12.2",
+    "@azure/identity": "^4.13.1",
     "@azure/ms-rest-azure-env": "^2.0.0",
-    "@azure/ms-rest-nodeauth": "^3.0.5",
-    "ajv": "^6.12.4",
-    "axios": "^0.21.4",
-    "azure-iot-device-mqtt": "^1.15.0",
-    "azure-iothub": "^1.12.4",
+    "@microsoft/vscode-azext-azureutils": "^4.1.1",
+    "@microsoft/vscode-azext-utils": "^4.0.8",
+    "@vscode/extension-telemetry": "^1.5.2",
+    "ajv": "^8.20.0",
+    "ajv-draft-04": "^1.0.0",
+    "axios": "^1.16.1",
+    "azure-iot-device-mqtt": "^1.16.4",
+    "azure-iothub": "^1.16.6",
     "body-parser": "^1.18.2",
     "dummy-json": "^3.0.4",
-    "express": "^4.16.3",
+    "express": "^4.22.2",
     "fs-extra": "^9.0.1",
     "glob": "^7.1.6",
-    "iview": "^3.5.4",
-    "jquery": "^3.3.1",
-    "keytar": "^7.9.0",
     "replace-in-file": "^6.1.0",
     "strip-json-comments": "^3.1.1",
-    "uuid": "^8.3.0",
-    "vscode-azureextensionui": "^0.35.0",
-    "vscode-extension-telemetry": "^0.1.6",
-    "vscode-test": "^1.4.1",
-    "vue": "^2.6.14"
-  },
-  "extensionDependencies": [
-    "ms-vscode.azure-account"
-  ]
+    "uuid": "^10.0.0",
+    "view-ui-plus": "^1.3.24",
+    "vue": "^3.5.34"
+  }
 }

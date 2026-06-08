@@ -2,7 +2,7 @@
 // Licensed under the MIT license.
 
 import * as vscode from "vscode";
-import { AzExtTreeDataProvider, AzureTreeItem, IActionContext } from "vscode-azureextensionui";
+import { AzExtTreeDataProvider, AzExtTreeItem, IActionContext } from "@microsoft/vscode-azext-utils";
 import { DpsResourceExplorer } from "./dpsResourceExplorer";
 import { DpsResourceTreeItem } from "./Nodes/DPS/DpsResourceTreeItem";
 
@@ -17,11 +17,11 @@ export class AzureDpsExplorer {
         return this._dpsResourceExplorer.viewProperties(actionContext, node);
     }
 
-    public async loadMore(actionContext: IActionContext, node: AzureTreeItem): Promise<void> {
+    public async loadMore(actionContext: IActionContext, node: AzExtTreeItem): Promise<void> {
         return this._dpsResourceExplorer.loadMore(actionContext, node);
     }
 
-    public async refresh(actionContext: IActionContext, node?: AzureTreeItem): Promise<void> {
+    public async refresh(actionContext: IActionContext, node?: AzExtTreeItem): Promise<void> {
         return this._dpsResourceExplorer.refresh(actionContext, node);
     }
 }

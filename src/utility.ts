@@ -5,7 +5,7 @@
 import { ResultWithHttpResponse } from "azure-iot-common";
 import { ConnectionString as DeviceConnectionString, SharedAccessSignature as DeviceSharedAccessSignature } from "azure-iot-device";
 import { ConnectionString, Registry, SharedAccessSignature, Twin } from "azure-iothub";
-import { IotHubModels} from "@azure/arm-iothub";
+import { IotHubDescription } from "@azure/arm-iothub";
 import * as crypto from "crypto";
 import * as fs from "fs";
 import * as os from "os";
@@ -20,7 +20,6 @@ import { INode } from "./Nodes/INode";
 import { TelemetryClient } from "./telemetryClient";
 import { ReceivedEventData, EventData } from "@azure/event-hubs";
 import { AxiosRequestConfig, Method } from "axios";
-import { AzureAccount } from "./azure-account.api";
 import { CredentialStore } from "./credentialStore";
 import { ResultWithIncomingMessage } from "azure-iothub/dist/interfaces";
 
@@ -51,7 +50,7 @@ export class Utility {
                     TelemetryClient.sendEvent("General.SetConfig.Done", { Result: "Success" });
                     await CredentialStore.setPassword(id, value);
                     if (id === Constants.IotHubConnectionStringKey) {
-                        await CredentialStore.setPassword(Constants.IotHubEventHubConnectionStringKey, undefined);
+                        await CredentialStore.deletePassword(Constants.IotHubEventHubConnectionStringKey);
                         await Utility.deleteIoTHubInfo();
                     }
                     resolve(value);
@@ -63,7 +62,7 @@ export class Utility {
                 }
             });
             input.onDidHide(() => {
-                resolve();
+                resolve(undefined);
                 input.dispose();
                 if (!value) {
                     this.showIoTHubInformationMessage();
@@ -281,7 +280,7 @@ export class Utility {
             }
 
             const deviceList: Promise<DeviceItem[]> = Utility.getFilteredDeviceList(iotHubConnectionString, onlyEdgeDevice);
-            deviceItem = await vscode.window.showQuickPick(deviceList, { placeHolder: "Select an IoT Hub device" });
+            deviceItem = await vscode.window.showQuickPick(deviceList as Promise<vscode.QuickPickItem[]>, { placeHolder: "Select an IoT Hub device" }) as DeviceItem;
             return deviceItem;
         } else {
             if (eventName) {
@@ -385,27 +384,30 @@ export class Utility {
         return result.responseBody;
     }
 
-    public static getAzureAccountApi(): AzureAccount {
-        return vscode.extensions.getExtension<AzureAccount>("ms-vscode.azure-account")!.exports;
-    }
 
     public static getMessageFromEventData(message: any): any {
         const config = Utility.getConfiguration();
         const showVerboseMessage = config.get<boolean>("showVerboseMessage");
         let result;
         const body = Utility.tryGetStringFromCharCode(message.body);
+        // In @azure/event-hubs v5+, application properties are in `properties`
+        const appProperties = message.properties || message.applicationProperties;
         if (showVerboseMessage) {
             result = {
                 body,
-                applicationProperties: message.applicationProperties,
+                applicationProperties: appProperties,
                 annotations: message.annotations,
-                properties: message.properties,
-                systemProperties: message.systemProperties
+                properties: {
+                    contentType: message.contentType,
+                    correlationId: message.correlationId,
+                    messageId: message.messageId,
+                },
+                systemProperties: message.systemProperties,
             };
-        } else if (message.applicationProperties && Object.keys(message.applicationProperties).length > 0) {
+        } else if (appProperties && Object.keys(appProperties).length > 0) {
             result = {
                 body,
-                applicationProperties: message.applicationProperties,
+                applicationProperties: appProperties,
             };
         } else {
             result = body;
@@ -417,7 +419,7 @@ export class Utility {
         return message.enqueuedTimeUtc ? `[${message.enqueuedTimeUtc.toLocaleTimeString("en-US")}] ` : "";
     }
 
-    public static async storeIoTHubInfo(subscriptionId: string, iotHubDescription: IotHubModels.IotHubDescription) {
+    public static async storeIoTHubInfo(subscriptionId: string, iotHubDescription: IotHubDescription) {
         await Constants.ExtensionContext.globalState.update(Constants.StateKeySubsID, subscriptionId);
         await Constants.ExtensionContext.globalState.update(Constants.StateKeyIoTHubID, iotHubDescription.id);
     }
@@ -477,30 +479,27 @@ export class Utility {
         const registry: Registry = Registry.fromConnectionString(iotHubConnectionString);
         const devices: DeviceItem[] = [];
         const hostName: string = Utility.getHostName(iotHubConnectionString);
+        const pageSize = Utility.getConfiguration().get<number>("deviceQueryPageSize", 100);
 
-        return new Promise<DeviceItem[]>((resolve, reject) => {
-            registry.list((err, deviceList) => {
-                if (err) {
-                    reject(err);
-                } else {
-                    deviceList.forEach((device, index) => {
-                        let deviceConnectionString: string = "";
-                        if (device.authentication.SymmetricKey.primaryKey != null) {
-                            deviceConnectionString = DeviceConnectionString.createWithSharedAccessKey(hostName, device.deviceId,
-                                device.authentication.SymmetricKey.primaryKey);
-                        } else if (device.authentication.x509Thumbprint.primaryThumbprint != null) {
-                            deviceConnectionString = DeviceConnectionString.createWithX509Certificate(hostName, device.deviceId);
-                        }
-                        devices.push(new DeviceItem(device.deviceId,
-                            deviceConnectionString,
-                            null,
-                            device.connectionState.toString(),
-                            null));
-                    });
-                    resolve(devices.sort((a: DeviceItem, b: DeviceItem) => { return a.deviceId.localeCompare(b.deviceId); }));
+        const query = registry.createQuery("SELECT * FROM devices", pageSize);
+        while (query.hasMoreResults) {
+            const page = (await query.next()) as ResultWithIncomingMessage<any[]>;
+            for (const device of page.result) {
+                let deviceConnectionString: string = "";
+                if (device.authentication?.symmetricKey?.primaryKey != null) {
+                    deviceConnectionString = DeviceConnectionString.createWithSharedAccessKey(hostName, device.deviceId,
+                        device.authentication.symmetricKey.primaryKey);
+                } else if (device.authentication?.x509Thumbprint?.primaryThumbprint != null) {
+                    deviceConnectionString = DeviceConnectionString.createWithX509Certificate(hostName, device.deviceId);
                 }
-            });
-        });
+                devices.push(new DeviceItem(device.deviceId,
+                    deviceConnectionString,
+                    null,
+                    (device.connectionState || "Disconnected").toString(),
+                    null));
+            }
+        }
+        return devices.sort((a: DeviceItem, b: DeviceItem) => a.deviceId.localeCompare(b.deviceId));
     }
 
     private static async getEdgeDeviceIdSet(iotHubConnectionString: string): Promise<Set<string>> {
